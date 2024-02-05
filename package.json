@@ -1,10 +1,12 @@
 {
-    "name": "lambda-api-backend",
-    "description": "Website & Mobile starter project",
+    "name": "cybersource-key-updater-backend",
+    "description": "",
     "version": "0.0.1",
     "private": true,
     "dependencies": {
-        "aws-sdk": "^2.660.0"
+        "aws-sdk": "^2.660.0",
+        "cybersource-rest-client": "^0.0.53",
+        "jwk-to-pem": "^2.0.5"
     },
     "devDependencies": {
         "jest": "^29.5.0"
