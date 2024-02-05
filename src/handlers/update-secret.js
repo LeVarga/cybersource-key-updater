@@ -17,7 +17,7 @@ exports.updateSecretHandler = async (event) => {
     var cs_client = new cybersourceRestApi.ApiClient();
     var cs_config = new paymentApiConfig(id, secret);
     var cs_request = new paymentRequest();
-    var txid = -1
+    var txid = ""
 
     // auth
     try {
@@ -30,13 +30,15 @@ exports.updateSecretHandler = async (event) => {
     }
 
     // reversal
-    try {
-        const csResponse = await testTx(cs_config, cs_request, cs_client, txid);
-        console.log('csResponse:', csResponse);
-        return {statusCode: 200, body: csResponse.data.status} // remove this
-    } catch (error) {
-        console.error('Error:', error);
-        return error;
+    if (txid) {
+        try {
+            const csResponse = await testTx(cs_config, cs_request, cs_client, txid);
+            console.log('csResponse:', csResponse);
+            return {statusCode: 200, body: csResponse.data.status} // remove this
+        } catch (error) {
+            console.error('Error:', error);
+            return error;
+        }
     }
 
     // update db here (getting this far means auth and reversal were successful)
