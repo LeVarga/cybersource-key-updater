@@ -33,7 +33,7 @@ exports.updateSecretHandler = async (event) => {
     try {
         const csResponse = await testTx(cs_config, cs_request, cs_client, txid);
         console.log('csResponse:', csResponse);
-        return csResponse.data.status // remove this
+        return {statusCode: 200, body: csResponse.data.status} // remove this
     } catch (error) {
         console.error('Error:', error);
         return error;
