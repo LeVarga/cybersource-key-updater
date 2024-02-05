@@ -1,7 +1,7 @@
 'use strict';
 const dynamodb = require('aws-sdk/clients/dynamodb');
 const docClient = new dynamodb.DocumentClient();
-const tableName = process.env.SAMPLE_TABLE;
+const tableName = process.env.TABLE_NAME;
 
 var cybersourceRestApi = require('cybersource-rest-client');
 var path = require('path');

@@ -44,11 +44,11 @@ Resources:
       Policies:
         # Give Create/Read/Update/Delete Permissions to the SampleTable
         - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+            TableName: !Ref PaymentAccount
       Environment:
         Variables:
           # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
+          TABLE_NAME: !Ref PaymentAccount
       Events:
         Api:
           Type: Api
@@ -57,12 +57,20 @@ Resources:
             Method: POST
 
   # DynamoDB table to store payment configuration
-  SampleTable:
-    Type: AWS::Serverless::SimpleTable
+  PaymentAccount:
+    Type: AWS::DynamoDB::Table
     Properties:
-      PrimaryKey:
-        Name: id
-        Type: String
+      AttributeDefinitions:
+        - AttributeName: dataAccountId
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+          - AttributeName: dataAccountId
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
       ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+        BillingMode: PROVISIONED
