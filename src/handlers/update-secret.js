@@ -12,37 +12,60 @@ exports.updateSecretHandler = async (event) => {
     if (event.httpMethod !== 'POST') {
         throw new Error(`postMethod only accepts POST method, you tried: ${httpMethod} method.`);
     }
+    console.log('received:', JSON.stringify(event));
+    const { id, secret } = JSON.parse(event.body);
+    var cs_client = new cybersourceRestApi.ApiClient();
+    var cs_config = new paymentApiConfig(id, secret);
+    var cs_request = new paymentRequest();
+    var txid = -1
+
+    // auth
     try {
-        console.log('received:', JSON.stringify(event));
-        const { id, secret } = JSON.parse(event.body);
-        const csResponse = await cs_auth(new paymentApiConfig(id, secret), new paymentRequest);
+        const csResponse = await testTx(cs_config, cs_request, cs_client);
         console.log('csResponse:', csResponse);
-        return { statusCode: 200, body: JSON.stringify({ message: "Keys successfully validated" }) };
+        txid = csResponse.data['id'];
     } catch (error) {
         console.error('Error:', error);
-        return { statusCode: 500, body: error };
+        return error;
     }
-}
 
-function cs_auth(cs_config, cs_request) {
+    // reversal
+    try {
+        const csResponse = await testTx(cs_config, cs_request, cs_client, txid);
+        console.log('csResponse:', csResponse);
+        return csResponse.data.status // remove this
+    } catch (error) {
+        console.error('Error:', error);
+        return error;
+    }
+
+    // update db here (getting this far means auth and reversal were successful)
+
+ }
+
+
+function testTx(cs_config, cs_request, cs_client, reverseTxId="") {
     return new Promise((resolve, reject) => {
+        function callback(error, data, response) {
+            if (error) {
+                console.log('\nError : ' + JSON.stringify(error));
+                reject(error);
+            } else {
+                console.log('\nData : ' + JSON.stringify(data));
+                console.log('\nResponse : ' + JSON.stringify(response));
+                resolve({error, data, response});
+            }
+        }
         try {
-            var apiClient = new cybersourceRestApi.ApiClient();
-            var instance = new cybersourceRestApi.PaymentsApi(cs_config, apiClient);
-
-            instance.createPayment(cs_request, function (error, data, response) {
-                if (error) {
-                    console.log('\nError : ' + JSON.stringify(error));
-                    reject(error);
-                } else {
-                    console.log('\nData : ' + JSON.stringify(data));
-                    console.log('\nResponse : ' + JSON.stringify(response));
-                    console.log('\nResponse Code of Process a Payment : ' + JSON.stringify(response['status']));
-                    resolve({error, data, response});
-                }
-            });
+            if (reverseTxId) {
+                let instance = new cybersourceRestApi.ReversalApi(cs_config, cs_client);
+                instance.authReversal(reverseTxId, cs_request, callback);
+            } else {
+                let instance = new cybersourceRestApi.PaymentsApi(cs_config, cs_client);
+                instance.createPayment(cs_request, callback);
+            }
         } catch (error) {
-            console.log('\nException on calling the API : ' + error);
+            console.log('\nException on calling the API for auth : ' + error);
             reject(error);
         }
     });
