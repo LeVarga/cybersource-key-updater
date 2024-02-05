@@ -70,7 +70,7 @@ Resources:
             KeyType: HASH
           - AttributeName: sk
             KeyType: RANGE
+      BillingMode: PROVISIONED
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
-        BillingMode: PROVISIONED
