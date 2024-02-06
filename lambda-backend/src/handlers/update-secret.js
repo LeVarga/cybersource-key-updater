@@ -1,6 +1,9 @@
 'use strict';
 const dynamodb = require('aws-sdk/clients/dynamodb');
-const docClient = new dynamodb.DocumentClient();
+
+const docClient = process.env.AWS_SAM_LOCAL ?
+    new dynamodb.DocumentClient({endpoint: 'http://host.docker.internal:8000'}) // use local db when running locally
+    : new dynamodb.DocumentClient();
 const tableName = process.env.TABLE_NAME;
 
 var cybersourceRestApi = require('cybersource-rest-client');
@@ -34,15 +37,34 @@ exports.updateSecretHandler = async (event) => {
         try {
             const csResponse = await testTx(cs_config, cs_request, cs_client, txid);
             console.log('csResponse:', csResponse);
-            return {statusCode: 200, body: csResponse.data.status} // remove this
+            //return {statusCode: 200, body: csResponse.data.status} // remove this
         } catch (error) {
             console.error('Error:', error);
             return error;
         }
     }
 
-    // update db here (getting this far means auth and reversal were successful)
-
+    // update db
+    let dbEntry = { // TODO: remove hard-coded values
+        dataAccountId: "129",
+        sk: "ffae73e4-9142-42f3-b10a-449fc505b490",
+        active: true,
+        matches: [ {
+            distributorId: "LFTX",
+            paymentType: "APPLE_PAY|GOOGLE_PAY|CREDIT_CARD"
+        }, ],
+        processorData: {
+            authenticationType: "http_signature",
+            externalAccount: "pacqa_08",
+            key: id,
+            name: "cybersource",
+            paymodeCodes: "[\"V\",\"MC\",\"AMEX\", \"D\"]",
+            runEnvironment: "apitest.cybersource.com",
+            secret: secret,
+        },
+    };
+    await docClient.put({TableName: tableName, Item: dbEntry}).promise(); // TODO: error handling
+    return {statusCode: 200, body: "Successfully updated keys."};
  }
 
 
