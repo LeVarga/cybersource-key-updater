@@ -22,7 +22,7 @@ jobs:
     
     - name: Test Docker Build
       run: |
-        docker build ./react-frontend --file cybersource-key-updater/react-frontend/Dockerfile --tag levarga/cybersource-key-updater-frontend:$(date +%s)
+        docker build ./react-frontend --file Dockerfile --tag levarga/cybersource-key-updater-frontend:$(date +%s)
 
     - name: SSH and Deploy Docker
       uses: appleboy/ssh-action@v1.0.3
