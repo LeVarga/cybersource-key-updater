@@ -32,7 +32,6 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script_stop: true
         script: |
-          git config --global --add safe.directory ~/cybersource-key-updater
           cd ~/cybersource-key-updater/react-frontend
           git pull
           docker build -t cs180-frontend .
