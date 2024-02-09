@@ -32,7 +32,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script_stop: true
         script: |
-          cd /path/to/cybersource-key-updater/react-frontend
+          cd /cybersource-key-updater/react-frontend
           git pull
           docker build -t cs180-frontend .
           docker rm -f cs180-frontend || true
