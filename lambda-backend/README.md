@@ -15,10 +15,10 @@ The production endpoint is https://yf6zmmg1j0.execute-api.us-west-1.amazonaws.co
 
 The updateSecret function is mapped to root for POST requests. This is an example call using curl:
 ```bash
-$ curl -d '{"id":"f886c285-4c36-499f-b853-5f5f9625df91", "secret":"HyUmdQn8onEvN2yv/QG1+d+EA2d6JLAv+PkXfkpykwM="}' \
+$ curl -d '{"key":"f886c285-4c36-499f-b853-5f5f9625df91", "secret":"HyUmdQn8onEvN2yv/QG1+d+EA2d6JLAv+PkXfkpykwM=", "dataAcctID":"129", "distID":"LFTX"' \
 -H 'Content-Type: application/json' https://yf6zmmg1j0.execute-api.us-west-1.amazonaws.com/Prod
 ```
-This should return "Successfully updated keys." when a valid key id and secret key pair is provided, indicating that a test transaction was successfully made, reversed, and a DB entry was added.
+This should return "Successfully updated keys." when a valid key and secret pair is provided for the given account ID, indicating that a test transaction was successfully made, reversed, and a DB entry was added.
        
 ## Build and test locally
 

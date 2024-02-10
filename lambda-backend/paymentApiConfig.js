@@ -1,11 +1,11 @@
 'use strict';
 
-function paymentApiConfig(newID, newSecret) {
+function paymentApiConfig(newID, newSecret, newMerchantID) {
     return {
         'authenticationType': 'http_signature',
         'runEnvironment': 'apitest.cybersource.com',
 
-        'merchantID': 'pacqa_08',
+        'merchantID': newMerchantID,
         'merchantKeyId': newID,
         'merchantsecretKey': newSecret,
 

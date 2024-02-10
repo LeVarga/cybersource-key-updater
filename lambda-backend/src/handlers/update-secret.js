@@ -5,6 +5,7 @@ const docClient = process.env.AWS_SAM_LOCAL ?
     new dynamodb.DocumentClient({endpoint: 'http://host.docker.internal:8000'}) // use local db when running locally
     : new dynamodb.DocumentClient();
 const tableName = process.env.TABLE_NAME;
+const { v4: uuidv4 } = require('uuid');
 
 var cybersourceRestApi = require('cybersource-rest-client');
 var path = require('path');
@@ -16,9 +17,11 @@ exports.updateSecretHandler = async (event) => {
         throw new Error(`postMethod only accepts POST method, you tried: ${httpMethod} method.`);
     }
     console.log('received:', JSON.stringify(event));
-    const { id, secret } = JSON.parse(event.body);
+    const { key, secret, dataAcctID, distID } = JSON.parse(event.body);
+    const merchantID = 'pacqa_08';
+
     var cs_client = new cybersourceRestApi.ApiClient();
-    var cs_config = new paymentApiConfig(id, secret);
+    var cs_config = new paymentApiConfig(key, secret, merchantID);
     var cs_request = new paymentRequest();
     var txid = ""
 
@@ -44,19 +47,21 @@ exports.updateSecretHandler = async (event) => {
         }
     }
 
+
+    // TODO: If there is already an entry with the same acct id, set active in that entry to false?
     // update db
-    let dbEntry = { // TODO: remove hard-coded values
-        dataAccountId: "129",
-        sk: "ffae73e4-9142-42f3-b10a-449fc505b490",
+    let dbEntry = {
+        dataAccountId: dataAcctID,
+        sk: uuidv4(),
         active: true,
         matches: [ {
-            distributorId: "LFTX",
+            distributorId: distID,
             paymentType: "APPLE_PAY|GOOGLE_PAY|CREDIT_CARD"
         }, ],
         processorData: {
             authenticationType: "http_signature",
-            externalAccount: "pacqa_08",
-            key: id,
+            externalAccount: merchantID,
+            key: key,
             name: "cybersource",
             paymodeCodes: "[\"V\",\"MC\",\"AMEX\", \"D\"]",
             runEnvironment: "apitest.cybersource.com",
