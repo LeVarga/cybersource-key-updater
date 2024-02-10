@@ -12,9 +12,10 @@ var path = require('path');
 var paymentApiConfig = require(path.resolve('paymentApiConfig.js'));
 var paymentRequest = require(path.resolve('paymentRequest.js'));
 
+
 exports.updateSecretHandler = async (event) => {
     if (event.httpMethod !== 'POST') {
-        throw new Error(`postMethod only accepts POST method, you tried: ${httpMethod} method.`);
+        throw new Error(`Only accepting POST.`);
     }
     console.log('received:', JSON.stringify(event));
     const { key, secret, dataAcctID, distID } = JSON.parse(event.body);
@@ -24,6 +25,11 @@ exports.updateSecretHandler = async (event) => {
     var cs_config = new paymentApiConfig(key, secret, merchantID);
     var cs_request = new paymentRequest();
     var txid = ""
+    let respHeaders = {
+        'Content-Type':'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+    }
 
     // auth
     try {
@@ -32,7 +38,7 @@ exports.updateSecretHandler = async (event) => {
         txid = csResponse.data['id'];
     } catch (error) {
         console.error('Error:', error);
-        return error;
+        return {statusCode: 400, headers: respHeaders, body: JSON.stringify({error: error})};
     }
 
     // reversal
@@ -40,10 +46,9 @@ exports.updateSecretHandler = async (event) => {
         try {
             const csResponse = await testTx(cs_config, cs_request, cs_client, txid);
             console.log('csResponse:', csResponse);
-            //return {statusCode: 200, body: csResponse.data.status} // remove this
         } catch (error) {
             console.error('Error:', error);
-            return error;
+            return {statusCode: 400, headers: respHeaders, body: JSON.stringify({error: error})};
         }
     }
 
@@ -69,7 +74,7 @@ exports.updateSecretHandler = async (event) => {
         },
     };
     await docClient.put({TableName: tableName, Item: dbEntry}).promise(); // TODO: error handling
-    return {statusCode: 200, body: "Successfully updated keys."};
+    return {statusCode: 200, headers: respHeaders, body: JSON.stringify({message: "Successfully updated keys."})};
  }
 
 
