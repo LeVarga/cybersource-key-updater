@@ -1,0 +1,41 @@
+name:  Deploy Frontend
+
+on:
+  # push:
+  #   branches: [ "master" ]
+  #   paths: ['react-frontend/**']
+    
+  # pull_request:
+  #   branches: [ "master" ]
+  #   paths: ['react-frontend/**']
+
+  workflow_dispatch:
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Test Docker Build
+      run: |
+        docker build ./react-frontend --tag levarga/cybersource-key-updater-frontend:$(date +%s)
+
+    - name: SSH and Deploy Docker
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: 'ssh.cs180.levarga.com'
+        username: 'github'
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script_stop: true
+        script: |
+          cd ~/cybersource-key-updater/react-frontend
+          git pull
+          docker build -t cs180-frontend .
+          docker rm -f cs180-frontend || true
+          docker run -d --name=cs180-frontend -p 8080:80/tcp cs180-frontend
+
+    
