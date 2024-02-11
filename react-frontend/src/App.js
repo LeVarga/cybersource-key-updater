@@ -44,63 +44,31 @@ function App() {
         });
   };
 
+  function newTextBox(name, id, value, label) {
+    return (<div className="md:flex md:items-center mb-6">
+      <div className="md:w-1/3">
+        <label className="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4"
+               htmlFor={id}>
+          {label}
+        </label>
+      </div>
+      <div className="md:w-2/3">
+        <input
+            className="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+            name={name} id={id} type="text" value={value} onChange={handleChange}/>
+      </div>
+    </div>)
+  }
+
   return (
       <div className="App">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo"/>
           <form className="w-full max-w-sm" onSubmit={handleSubmit}>
-            <div className="md:flex md:items-center mb-6">
-              <div className="md:w-1/3">
-                <label className="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4"
-                       htmlFor="inline-dataAcctID">
-                  Data Account ID
-                </label>
-              </div>
-              <div className="md:w-2/3">
-                <input
-                    className="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
-                    name="dataAcctID" id="inline-dataAcctID" type="text" value={inputs.dataAcctID} onChange={handleChange}/>
-              </div>
-            </div>
-            <div className="md:flex md:items-center mb-6">
-              <div className="md:w-1/3">
-                <label className="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4"
-                       htmlFor="inline-distrID">
-                  Distributor ID
-                </label>
-              </div>
-              <div className="md:w-2/3">
-                <input
-                    className="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
-                    name="distID" id="inline-distrID" type="text" onChange={handleChange} value={inputs.distID}/>
-              </div>
-            </div>
-            <div className="md:flex md:items-center mb-6">
-              <div className="md:w-1/3">
-                <label className="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4"
-                       htmlFor="inline-key">
-                  Key ID
-                </label>
-              </div>
-              <div className="md:w-2/3">
-                <input
-                    className="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
-                    name="key" id="inline-key" type="text" value={inputs.key} onChange={handleChange}/>
-              </div>
-            </div>
-            <div className="md:flex md:items-center mb-6">
-              <div className="md:w-1/3">
-                <label className="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4"
-                       htmlFor="inline-secret">
-                  Key Secret
-                </label>
-              </div>
-              <div className="md:w-2/3">
-                <input
-                    className="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
-                    name="secret" id="inline-secret" type="text" value={inputs.secret} onChange={handleChange}/>
-              </div>
-            </div>
+            {newTextBox("dataAcctID", "inline-dataAcctID", inputs.dataAcctID, "Data Account ID")}
+            {newTextBox("distID", "inline-distID", inputs.distID, "Distributor ID")}
+            {newTextBox("key", "inline-key", inputs.key, "Key ID")}
+            {newTextBox("secret", "inline-secret", inputs.secret, "Key Secret")}
             <div className="md:flex md:items-center">
               <div className="md:w-1/3"></div>
               <div className="md:w-2/3">
