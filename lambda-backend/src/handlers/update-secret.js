@@ -1,16 +1,11 @@
 'use strict';
-const dynamodb = require('aws-sdk/clients/dynamodb');
 
-const docClient = process.env.AWS_SAM_LOCAL ?
-    new dynamodb.DocumentClient({endpoint: 'http://host.docker.internal:8000'}) // use local db when running locally
-    : new dynamodb.DocumentClient();
-const tableName = process.env.TABLE_NAME;
+const cybersourceRestApi= require('cybersource-rest-client');
+const paymentApiConfig = require('../paymentApiConfig')
+const paymentRequest = require('../paymentRequest')
+const jsonResponse = require('../jsonResponse')
+const db = require('../db')
 const { v4: uuidv4 } = require('uuid');
-
-var cybersourceRestApi = require('cybersource-rest-client');
-var path = require('path');
-var paymentApiConfig = require(path.resolve('paymentApiConfig.js'));
-var paymentRequest = require(path.resolve('paymentRequest.js'));
 
 
 exports.updateSecretHandler = async (event) => {
@@ -25,11 +20,6 @@ exports.updateSecretHandler = async (event) => {
     var cs_config = new paymentApiConfig(key, secret, merchantID);
     var cs_request = new paymentRequest();
     var txid = ""
-    let respHeaders = {
-        'Content-Type':'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-    }
 
     // auth
     try {
@@ -38,7 +28,7 @@ exports.updateSecretHandler = async (event) => {
         txid = csResponse.data['id'];
     } catch (error) {
         console.error('Error:', error);
-        return {statusCode: 400, headers: respHeaders, body: JSON.stringify({error: error})};
+        return jsonResponse(error, null, "Failed to authorize transaction.")
     }
 
     // reversal
@@ -48,7 +38,7 @@ exports.updateSecretHandler = async (event) => {
             console.log('csResponse:', csResponse);
         } catch (error) {
             console.error('Error:', error);
-            return {statusCode: 400, headers: respHeaders, body: JSON.stringify({error: error})};
+            return jsonResponse(error, null, `Failed to reverse transaction (ID: ${txid}).`)
         }
     }
 
@@ -73,8 +63,8 @@ exports.updateSecretHandler = async (event) => {
             secret: secret,
         },
     };
-    await docClient.put({TableName: tableName, Item: dbEntry}).promise(); // TODO: error handling
-    return {statusCode: 200, headers: respHeaders, body: JSON.stringify({message: "Successfully updated keys."})};
+    await db.client.put({TableName: db.tableName, Item: dbEntry}).promise(); // TODO: error handling
+    return jsonResponse(null, null, "Successfully updated keys.")
  }
 
 
