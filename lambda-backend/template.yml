@@ -86,6 +86,30 @@ Resources:
             Path: /
             Method: POST
 
+  initTestTableFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: src/handlers/init-test-table.initTestTableHandler
+      Runtime: nodejs18.x
+      MemorySize: 128
+      Timeout: 60
+      Description: Fills DynamoDB table with data for testing
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the SampleTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaymentAccount
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TABLE_NAME: !Ref PaymentAccount
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /initTable
+            Method: GET
+
   ## START DB SECTION ##
   # DynamoDB table to store payment configuration
   PaymentAccount:
