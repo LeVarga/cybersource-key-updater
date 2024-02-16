@@ -1,0 +1,7 @@
+{
+  "httpMethod": "GET",
+  "queryParameters": {
+    "dataAcctID": "129"
+  },
+  "path": "/getDistributors"
+}
