@@ -10,7 +10,7 @@ function jsonResponse(error, data=null, message="") {
     return {
         statusCode: error ? 400 : 200,
         headers: corsHeaders('application/json'),
-        body: {error: error, data: data, message: message }
+        body: JSON.stringify({error: error, data: data, message: message})
     }
 }
 
