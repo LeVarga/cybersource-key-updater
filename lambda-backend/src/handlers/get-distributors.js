@@ -22,7 +22,7 @@ exports.getDistributorsHandler = async (event)  => {
         let results = []
         dbResponse.Items.forEach((entry) => {
             entry?.matches.forEach((match) => {
-                results.push(match.distributorId);
+                results.push({distID: match.distributorId, sk: entry.sk, active: entry.active});
             });
         });
         return jsonResponse(null, results, !results ? "Could not find any distributors using that client ID.": "");
