@@ -21,6 +21,12 @@ Globals:
     # More information in https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html
     PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${AppId}-${AWS::Region}-PermissionsBoundary'
 
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,OPTIONS'"
+      AllowHeaders: "'content-type'"
+      AllowOrigin: "'*'"
+
 Parameters:
   AppId:
     Type: String
@@ -32,6 +38,30 @@ Resources:
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
 
   # This is a Lambda function config associated with the source code: update-secret.js
+  getDistributorsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: src/handlers/get-distributors.getDistributorsHandler
+      Runtime: nodejs18.x
+      MemorySize: 128
+      Timeout: 60
+      Description: Returns a list of distributors with matching account id
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the SampleTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaymentAccount
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TABLE_NAME: !Ref PaymentAccount
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /getDistributors
+            Method: GET
+
   updateSecretFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -56,6 +86,31 @@ Resources:
             Path: /
             Method: POST
 
+  initTestTableFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: src/handlers/init-test-table.initTestTableHandler
+      Runtime: nodejs18.x
+      MemorySize: 256
+      Timeout: 60
+      Description: Fills DynamoDB table with data for testing
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the SampleTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaymentAccount
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TABLE_NAME: !Ref PaymentAccount
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /initTable
+            Method: GET
+
+  ## START DB SECTION ##
   # DynamoDB table to store payment configuration
   PaymentAccount:
     Type: AWS::DynamoDB::Table
@@ -66,11 +121,12 @@ Resources:
         - AttributeName: sk
           AttributeType: S
       KeySchema:
-          - AttributeName: dataAccountId
-            KeyType: HASH
-          - AttributeName: sk
-            KeyType: RANGE
+        - AttributeName: dataAccountId
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
       BillingMode: PROVISIONED
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+  ## END DB SECTION ##
