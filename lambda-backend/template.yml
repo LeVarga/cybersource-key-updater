@@ -92,7 +92,7 @@ Resources:
       CodeUri: ./
       Handler: src/handlers/init-test-table.initTestTableHandler
       Runtime: nodejs18.x
-      MemorySize: 128
+      MemorySize: 256
       Timeout: 60
       Description: Fills DynamoDB table with data for testing
       Policies:

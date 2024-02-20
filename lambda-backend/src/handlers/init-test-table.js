@@ -3,8 +3,6 @@ const db = require("../db")
 const { v4: uuidv4 } = require('uuid');
 const jsonResponse = require("../jsonResponse");
 
-var items = []
-
 const initialValues = [{ // TODO: Add more merchant IDs (they need new keys)
         merchantID: 'uci_cs180_2024_1708022268', keys: [
             {key: 'efb3de12-e6f8-423a-9b13-8f598643bcfa', secret: '0bRwwsrvao7LpTeAq5rfRj1gQv0KOsXR/tQiX4ErOBE='},
@@ -20,35 +18,77 @@ const initialValues = [{ // TODO: Add more merchant IDs (they need new keys)
             {key: '28cfdc85-5c54-496e-b709-1744e67eb89a', secret: '1HL4l97nuQK+iyutG+Au270DacanUygWvEW1MLeTy3E='},
             {key: 'af070043-806d-4e31-b5a8-5f74aebe4231', secret: 'PJdN3gryaY8DNaI2IPPlqlkh/KmEWY6oJCanNUF6tWQ='},
         ]
-    }]
+    }];
 
 function randomDistID(len) {
-    let id = ""
-    for (let i = 0; i < len; i++) id += String.fromCharCode(65 + Math.floor(Math.random() * 26))
+    let id = "";
+    for (let i = 0; i < len; i++) id += String.fromCharCode(65 + Math.floor(Math.random() * 26));
     return id;
 }
 
 function randomMatchesEntries() {
-    let matches = []
+    let matches = [];
     for (let i = 0; i <= Math.floor(Math.random() * 5) + 1; i++) {
         matches.push({
             "distributorId": randomDistID(5), // random 5 letter string
             "paymentType": "APPLE_PAY|GOOGLE_PAY|CREDIT_CARD"
-        })
+        });
     }
-    return matches
+    return matches;
+}
+
+async function deleteAll(db, items, key) {
+    let promises = items.map(item => {
+        let keyParam = {};
+        if (key instanceof Array) {
+            key.forEach(k => {
+                keyParam[k] = item[k];
+            });
+        } else {
+            keyParam[key] = item[key];
+        }
+        return db.client.delete({
+            TableName: db.tableName,
+            Key: keyParam
+        }).promise();
+    });
+    return Promise.all(promises).catch(err => {
+            console.error('An error occurred while deleting items:', err.message);
+            throw err;
+        });
+}
+
+async function fetchAll(db) {
+    let existingContents = [];
+    try {
+        let params = {TableName: db.tableName};
+        let dbResult;
+        do {
+            dbResult = await db.client.scan(params).promise();
+            existingContents.push(...dbResult.Items);
+            params.ExclusiveStartKey = dbResult.LastEvaluatedKey;
+        } while (typeof dbResult.LastEvaluatedKey !== "undefined");
+        return existingContents;
+    } catch (err) {
+        console.error("Error scanning existing table items:", err.message);
+        throw err;
+    }
 }
 
 
+
 exports.initTestTableHandler = async (event) => {
-    let params = {
-        RequestItems: {
-            [db.tableName]: items,
-        },
+    // clear existing data
+    try {
+        const existingContents = await fetchAll(db);
+        await deleteAll(db, existingContents, ["dataAccountId", "sk"]);
+    } catch (err) {
+        console.error("An error occurred while clearing existing table values:", err.message);
+        return jsonResponse(err, null, "An error occurred while clearing existing table values.");
     }
 
-    // TODO: Wipe existing values first
-
+    // generate new data (one entry for each merchantID/key/secret combo with random other values)
+    let items = [];
     initialValues.forEach((merchant) => {
         merchant.keys.forEach((kp) => {
             items.push({
@@ -70,15 +110,16 @@ exports.initTestTableHandler = async (event) => {
                     },
                 },
             });
-        })
-    })
+        });
+    });
 
-
+    // insert new data
     try {
-        await db.client.batchWrite(params).promise()
-        return jsonResponse(null, null,  "Done.");
+        await db.client.batchWrite({RequestItems: {[db.tableName]: items}}).promise();
+        console.log(`Successfully generated ${items.length} entries.`)
+        return jsonResponse(null, null,  `Successfully generated ${items.length} clients.`);
     } catch (err) {
-        console.log(err.message);
-        return jsonResponse(err, null, "Database error.");
+        console.log("Error inserting new db items:", err.message);
+        return jsonResponse(err, null, "Error inserting new database items.");
     }
 }
