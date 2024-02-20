@@ -1,12 +1,12 @@
 'use strict';
 
-function paymentApiConfig(newID, newSecret, newMerchantID) {
+function paymentApiConfig(newKey, newSecret, pd) {
     return {
-        'authenticationType': 'http_signature',
-        'runEnvironment': 'apitest.cybersource.com',
+        'authenticationType': pd.authenticationType,
+        'runEnvironment': pd.runEnvironment,
 
-        'merchantID': newMerchantID,
-        'merchantKeyId': newID,
+        'merchantID': pd.externalAccount,
+        'merchantKeyId': newKey,
         'merchantsecretKey': newSecret,
 
         'logConfiguration': {

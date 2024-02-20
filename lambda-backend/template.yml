@@ -44,7 +44,7 @@ Resources:
       CodeUri: ./
       Handler: src/handlers/get-distributors.getDistributorsHandler
       Runtime: nodejs18.x
-      MemorySize: 128
+      MemorySize: 256
       Timeout: 60
       Description: Returns a list of distributors with matching account id
       Policies:
@@ -68,7 +68,7 @@ Resources:
       CodeUri: ./
       Handler: src/handlers/update-secret.updateSecretHandler
       Runtime: nodejs18.x
-      MemorySize: 128
+      MemorySize: 512
       Timeout: 60
       Description: Tests and updates payment configuration with provided keys
       Policies:
