@@ -10,62 +10,132 @@ const { v4: uuidv4 } = require('uuid');
 
 exports.updateSecretHandler = async (event) => {
     if (event.httpMethod !== 'POST') {
-        throw new Error(`Only accepting POST.`);
+        throw new Error(`This function only accepts POST requests.`);
     }
     console.log('received:', JSON.stringify(event));
-    const { key, secret, dataAcctID, distID } = JSON.parse(event.body);
-    const merchantID = 'pacqa_08';
+    const { key, secret, dataAcctID, distID, sk } = JSON.parse(event.body);
 
-    var cs_client = new cybersourceRestApi.ApiClient();
-    var cs_config = new paymentApiConfig(key, secret, merchantID);
-    var cs_request = new paymentRequest();
-    var txid = ""
+    // get the appropriate db entry
+    let item;
+    try {
+        item = await getItemByKey(db, {dataAccountId: dataAcctID, sk: sk,});
+    } catch (err) {
+        console.log("Error retrieving item: ", err.message);
+        return jsonResponse(err, null, "Could not retrieve item with that key.");
+    }
 
-    // auth
+    // get the distributor id's index in the matches array of the db entry
+    let distIndex;
+    try {
+        distIndex = getDistributorMatchIndex(item, distID);
+    } catch (err) {
+        console.error(err.message);
+        return jsonResponse(err, null, err.message);
+    }
+
+    // configure CS API call parameters
+    const cs_client = new cybersourceRestApi.ApiClient();
+    const cs_config = new paymentApiConfig(key, secret, item.processorData);
+    const cs_request = new paymentRequest();
+    let txid = "";
+
+    // make auth call
     try {
         const csResponse = await testTx(cs_config, cs_request, cs_client);
         console.log('csResponse:', csResponse);
         txid = csResponse.data['id'];
     } catch (error) {
         console.error('Error:', error);
-        return jsonResponse(error, null, "Failed to authorize transaction.")
+        return jsonResponse(error, null, "Failed to authorize transaction.");
     }
 
-    // reversal
+    // make reversal call
     if (txid) {
         try {
             const csResponse = await testTx(cs_config, cs_request, cs_client, txid);
             console.log('csResponse:', csResponse);
         } catch (error) {
             console.error('Error:', error);
-            return jsonResponse(error, null, `Failed to reverse transaction (ID: ${txid}).`)
+            return jsonResponse(error, null, `Failed to reverse transaction (ID: ${txid}).`);
         }
     }
 
 
-    // TODO: If there is already an entry with the same acct id, set active in that entry to false?
     // update db
-    let dbEntry = {
-        dataAccountId: dataAcctID,
-        sk: uuidv4(),
-        active: true,
-        matches: [ {
-            distributorId: distID,
-            paymentType: "APPLE_PAY|GOOGLE_PAY|CREDIT_CARD"
-        }, ],
-        processorData: {
-            authenticationType: "http_signature",
-            externalAccount: merchantID,
-            key: key,
-            name: "cybersource",
-            paymodeCodes: "[\"V\",\"MC\",\"AMEX\", \"D\"]",
-            runEnvironment: "apitest.cybersource.com",
-            secret: secret,
-        },
-    };
-    await db.client.put({TableName: db.tableName, Item: dbEntry}).promise(); // TODO: error handling
+    try {
+        if (item.matches.length === 1) {
+            // when this is already the only dist id using the key, update existing entry only
+            await db.client.update({
+                TableName: db.tableName,
+                Key: {
+                    sk: sk,
+                    dataAccountId: dataAcctID,
+                },
+                UpdateExpression: "set #secret = :s, #key = :k",
+                ExpressionAttributeNames: {
+                    "#key": "key",
+                    "#secret": "secret",
+                },
+                ExpressionAttributeValues: {
+                    ":s": secret,
+                    ":k": key,
+                },
+            }).promise();
+        } else {
+            // otherwise create new entry with that dist id and new key/secret and sort key, but everything else same
+            let  newEntry = {}
+            Object.assign(newEntry, item);
+            newEntry.matches = [item.matches[distIndex]];
+            newEntry.processorData.secret = secret;
+            newEntry.processorData.key = key;
+            newEntry.sk = uuidv4();
+            await db.client.put({
+                TableName: db.tableName, Item: newEntry
+            }).promise();
+
+            // and remove the distributor from its original entry
+            //const updateExpression = `REMOVE matches[${distIndex}]`;
+            await db.client.update({
+                TableName: db.tableName,
+                Key: {
+                    sk: sk,
+                    dataAccountId: dataAcctID,
+                },
+                UpdateExpression: `REMOVE matches[${distIndex}]`,
+            }).promise();
+        }
+    } catch (err) {
+        console.log("Failed to update database after testing key:", err.message);
+        return jsonResponse(err, null, "Failed to update database after testing key:");
+    }
     return jsonResponse(null, null, "Successfully updated keys.")
- }
+}
+
+async function getItemByKey(db, key) {
+    try {
+        let dbResponse = await db.client.get({TableName: db.tableName, Key: key}).promise();
+        return Promise.resolve(dbResponse.Item);
+    } catch (err) {
+        console.log("DB lookup failed:", err.message);
+        return Promise.reject(err);
+    }
+}
+
+function getDistributorMatchIndex(item, distributor) {
+    if (item.matches instanceof Array) {
+        const matchIndex = item.matches.findIndex(match => match.distributorId === distributor);
+        if (matchIndex === -1) {
+            throw new Error("DB entry does not contain the provided distributor ID.");
+        }
+        const duplicateIndex = item.matches.findIndex((match, index) => match.distributorId === distributor && index !== matchIndex);
+        if (duplicateIndex !== -1) {
+            throw new Error("Database error: found duplicate distributor IDs in entry.");
+        }
+        return matchIndex;
+    } else {
+        throw new Error("No matches array found in DB entry.");
+    }
+}
 
 
 function testTx(cs_config, cs_request, cs_client, reverseTxId="") {
