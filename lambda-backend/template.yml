@@ -1,14 +1,7 @@
-# This is the SAM template that represents the architecture of your serverless application
-# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
-
-# The AWSTemplateFormatVersion identifies the capabilities of the template
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   Backend to test and update Cybersource key configuration
 
-# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
 Transform: AWS::Serverless-2016-10-31
 
 # Shared configuration for all resources, more in
@@ -37,7 +30,6 @@ Resources:
   # Each Lambda function is defined by properties:
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
 
-  # This is a Lambda function config associated with the source code: update-secret.js
   getDistributorsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -48,12 +40,10 @@ Resources:
       Timeout: 60
       Description: Returns a list of distributors with matching account id
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
         - DynamoDBCrudPolicy:
             TableName: !Ref PaymentAccount
       Environment:
         Variables:
-          # Make table name accessible as environment variable from function code during execution
           TABLE_NAME: !Ref PaymentAccount
       Events:
         Api:
@@ -72,12 +62,10 @@ Resources:
       Timeout: 60
       Description: Tests and updates payment configuration with provided keys
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
         - DynamoDBCrudPolicy:
             TableName: !Ref PaymentAccount
       Environment:
         Variables:
-          # Make table name accessible as environment variable from function code during execution
           TABLE_NAME: !Ref PaymentAccount
       Events:
         Api:
@@ -86,28 +74,26 @@ Resources:
             Path: /
             Method: POST
 
-  initTestTableFunction:
+  testingFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./
-      Handler: src/handlers/init-test-table.initTestTableHandler
+      Handler: src/handlers/testing.testingHandler
       Runtime: nodejs18.x
       MemorySize: 256
       Timeout: 60
-      Description: Fills DynamoDB table with data for testing
+      Description: Database functions for testing
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
         - DynamoDBCrudPolicy:
             TableName: !Ref PaymentAccount
       Environment:
         Variables:
-          # Make table name accessible as environment variable from function code during execution
           TABLE_NAME: !Ref PaymentAccount
       Events:
         Api:
           Type: Api
           Properties:
-            Path: /initTable
+            Path: /testing
             Method: GET
 
   ## START DB SECTION ##

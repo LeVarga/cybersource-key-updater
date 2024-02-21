@@ -1,7 +1,7 @@
 {
   "httpMethod": "GET",
   "queryStringParameters": {
-    "action": "initdb"
+    "action": "scandb"
   },
   "path": "/testing"
 }
