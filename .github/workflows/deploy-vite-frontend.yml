@@ -1,13 +1,13 @@
-name:  Deploy Frontend
+name:  Deploy Vite Frontend
 
 on:
   push:
     branches: [ "master" ]
-    paths: ['react-frontend/**']
+    paths: ['vite-frontend/**']
     
   pull_request:
     branches: [ "master" ]
-    paths: ['react-frontend/**']
+    paths: ['vite-frontend/**']
 
   workflow_dispatch:
 
