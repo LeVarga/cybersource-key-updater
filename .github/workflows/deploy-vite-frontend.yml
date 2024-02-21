@@ -35,7 +35,7 @@ jobs:
           cd ~/cybersource-key-updater
           git checkout master
           git pull origin master
-          cd /vite-frontend
+          cd vite-frontend
           docker build -t cs180-frontend .
           docker rm -f cs180-frontend || true
           docker run -d --name=cs180-frontend -p 8080:80/tcp cs180-frontend
