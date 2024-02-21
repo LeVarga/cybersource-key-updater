@@ -33,7 +33,8 @@ jobs:
         script_stop: true
         script: |
           cd ~/cybersource-key-updater
-          git pull
+          git checkout master
+          git pull origin master
           cd /vite-frontend
           docker build -t cs180-frontend .
           docker rm -f cs180-frontend || true
