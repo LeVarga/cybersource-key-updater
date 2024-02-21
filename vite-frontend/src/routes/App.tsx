@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { Link } from 'react-router-dom';
 import './App.css'
+import TestPage from './TestPage';
 
 function App() {
   const [inputs, setInputs] = useState({
@@ -45,6 +45,34 @@ function App() {
         });
   };
 
+  const handleDistributer = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    setLoading(true); // Start loading
+  
+    const url = new URL('https://yf6zmmg1j0.execute-api.us-west-1.amazonaws.com/Prod/getDistributors');
+    url.searchParams.set('dataAcctID', inputs.dataAcctID);
+  
+    fetch(url, {
+      method: 'GET', // Assuming this is a GET request
+    })
+      .then(response => response.json())
+      .then(data => {
+        // setResult(JSON.stringify(data));
+        const distIDs = data.data?.map((distributor: { distID: any; }) => distributor.distID) ?? [];
+        const formattedDistIDs = distIDs.join(' ');
+        setResult(formattedDistIDs);
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        // Handle error and display user-friendly message
+        setResult('An error occurred. Please try again later.');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+  
+
   function newTextBox(props: {name: string, id: string, value: string, label: string}): JSX.Element {
     return (
       <div className="md:flex md:items-center mb-6">
@@ -65,15 +93,10 @@ function App() {
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
       <h1>Vite + React</h1>
+      <nav>
+        <Link to="/testpage">Test Page</Link>
+      </nav>
       <form className="w-full max-w-sm" onSubmit={handleSubmit}>
             {newTextBox({ name: "dataAcctID", id: "inline-dataAcctID", value: inputs.dataAcctID, label: "Data Account ID" })}
             {newTextBox({ name: "distID", id: "inline-distID", value: inputs.distID, label: "Distributor ID" })}
@@ -89,8 +112,12 @@ function App() {
                 </button>
               </div>
             </div>
-          </form>
-          {loading ? <div className="spinner"></div> : <div>{result}</div>}
+      </form>
+      {loading ? <div className="spinner"></div> : <div>{result}</div>}
+
+      <button onClick={handleDistributer}>Fetch Distributors</button>
+
+
     </>
   )
 }
