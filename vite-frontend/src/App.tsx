@@ -46,10 +46,14 @@ function App({ merchantId, distributorId }: { merchantId: string, distributorId:
   return (
     <div className='bg-white grid grid-cols-2'>
       <Sidebar />
-      <div>
+      <div className='w-full'>
         <h1>Payment Key Validation</h1>
-        <p>{merchantId}</p>
-        <p>{distributorId}</p>
+        {/* area containing current ids */}
+        <div className='grid grid-cols-2 items-start my-4'>
+          <span className='bg-lightGray-300 mx-4 w-auto p-2 rounded font-bold'>Merchant ID: 000_A1{merchantId}</span>
+          <span className='bg-lightGray-200 mx-4 w-auto p-2 rounded'>Distributor B{distributorId}</span>
+        </div>
+        {/* textbox form */}
         <form className="w-full max-w-sm" onSubmit={handleSubmit}>
           <Textbox name='key' id="inline-key" value={inputs.key} label='Key ID' handleChange={handleChange} />
           <Textbox name='secret' id="inline-secret" value={inputs.secret} label='Key Secret' handleChange={handleChange} />

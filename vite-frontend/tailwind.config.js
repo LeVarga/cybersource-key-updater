@@ -14,7 +14,11 @@ export default {
         black: "#161416",
         darkGray: "#232123",
         midGray: "#343334",
-        lightGray: "#CCCBCD"
+        lightGray: {
+          100: "#CCCBCD",
+          200: "#D9D9D9",
+          300: "#B3B2B2"
+        },
       }
     },
   },
