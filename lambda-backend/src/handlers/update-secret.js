@@ -21,7 +21,7 @@ exports.updateSecretHandler = async (event) => {
         item = await getItemByKey(db, {dataAccountId: dataAcctID, sk: sk,});
     } catch (err) {
         console.log("Error retrieving item: ", err.message);
-        return jsonResponse(err, null, "Could not retrieve item with that key.");
+        return jsonResponse(err, null, err.message);
     }
 
     // get the distributor id's index in the matches array of the db entry
@@ -105,20 +105,24 @@ exports.updateSecretHandler = async (event) => {
             }).promise();
         }
     } catch (err) {
-        console.log("Failed to update database after testing key:", err.message);
+        console.error("Failed to update database after testing key:", err.message);
         return jsonResponse(err, null, "Failed to update database after testing key:");
     }
-    return jsonResponse(null, null, "Successfully updated keys.")
+    return jsonResponse(null, null, "Successfully updated keys.");
 }
 
 async function getItemByKey(db, key) {
     try {
         let dbResponse = await db.client.get({TableName: db.tableName, Key: key}).promise();
-        return Promise.resolve(dbResponse.Item);
+        if (dbResponse.Item) {
+            return dbResponse.Item;
+        }
     } catch (err) {
-        console.log("DB lookup failed:", err.message);
-        return Promise.reject(err);
+        console.error("DB lookup failed:", err.message);
+        throw err;
     }
+    console.error("Could not find db item with key: ", key);
+    throw new Error("Could not find db item with the provided key.");
 }
 
 function getDistributorMatchIndex(item, distributor) {
