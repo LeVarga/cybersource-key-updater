@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import Textbox from './components/textbox';
-import Sidebar from './components/sidebar/sidebar';
+import Textbox from './components/Textbox';
+import Sidebar from './components/sidebar/Sidebar';
 import './App.css'
 
 function App({ merchantId, distributorId }: { merchantId: string, distributorId: string }) {
@@ -47,26 +47,21 @@ function App({ merchantId, distributorId }: { merchantId: string, distributorId:
     <div className='bg-white grid grid-cols-2'>
       <Sidebar />
       <div className='w-full'>
-        <h1>Payment Key Validation</h1>
+        <h1 className='text-left mx-4 pt-4 pb-2'>Payment Key Validation</h1>
         {/* area containing current ids */}
         <div className='grid grid-cols-2 items-start my-4'>
-          <span className='bg-lightGray-300 mx-4 w-auto p-2 rounded font-bold'>Merchant ID: 000_A1{merchantId}</span>
-          <span className='bg-lightGray-200 mx-4 w-auto p-2 rounded'>Distributor B{distributorId}</span>
+          <span className='bg-lightGray-300 mx-4 w-auto p-1 rounded font-bold'>Merchant ID: 000_A1{merchantId}</span>
+          <span className='bg-lightGray-200 mx-4 w-auto p-1 rounded'>Distributor B{distributorId}</span>
         </div>
         {/* textbox form */}
-        <form className="w-full max-w-sm" onSubmit={handleSubmit}>
+        <form className="w-full" onSubmit={handleSubmit}>
           <Textbox name='key' id="inline-key" value={inputs.key} label='Key ID' handleChange={handleChange} />
           <Textbox name='secret' id="inline-secret" value={inputs.secret} label='Key Secret' handleChange={handleChange} />
-          <div className="md:flex md:items-center">
-            <div className="md:w-1/3"></div>
-            <div className="md:w-2/3">
-              <button
-                className="shadow bg-red focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded"
-                type="submit">
-                Validate
-              </button>
-            </div>
-          </div>
+          <button
+            className="shadow bg-red focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded float-right"
+            type="submit">
+            Validate
+          </button>
         </form>
         {loading ? <div className="spinner"></div> : <div>{result}</div>}
       </div>

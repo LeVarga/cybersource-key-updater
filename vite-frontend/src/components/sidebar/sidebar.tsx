@@ -1,4 +1,4 @@
-import Navlink from "./navlink"
+import Navlink from "./Navlink"
 export default function Sidebar() {
     const links = ["URL List", "Calendar", "Maintenance", "Install/Upgrades", "Onsales", "Pixel", "Clients", "Evenue Settings", "Customizations", "Dashboard", "Admin", "Payment Keys"]
     return (
