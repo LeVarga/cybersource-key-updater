@@ -71,7 +71,7 @@ Resources:
         Api:
           Type: Api
           Properties:
-            Path: /
+            Path: /updateSecret
             Method: POST
 
   testingFunction:
