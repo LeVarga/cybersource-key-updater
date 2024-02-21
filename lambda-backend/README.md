@@ -14,7 +14,6 @@
 - \_\_tests__/ - Unit tests.
 - template.yml - AWS resource definitions.
 - buildspec.yml -  AWS CodeBuild specification.
-- 
 
 
 ## Using the API
@@ -22,7 +21,27 @@
 ### Endpoint
 
 The production endpoint is https://yf6zmmg1j0.execute-api.us-west-1.amazonaws.com/Prod \
-/Stage works the same except it has debug logging to AWS CloudWatch.
+/Stage works the same except it has API gateway debug logging to AWS CloudWatch enabled.
+
+### Return Values
+All public functions return the following HTTP body in JSON format when invoked:
+
+```json
+{
+  "error": "dictionary or null",
+  "data": "any object",
+  "message": "string"
+}
+```
+- error  can be NULL, an empty dictionary, or an Error object (represented as a dictionary). \
+When it is NOT NULL (even if empty), that means there was an error. In that case, refer to message for a brief description. \
+The error value may or may not contain additional info about the error. Only present it in the UI if specifically requested (such as after clicking a more info button).
+
+- data contains the data returned (if any, and assuming error is NULL). If there was an error, it's set to NULL. If it's empty, that means no data was returned, but the function was successful.
+
+- message will generally contain a string that can be presented to the user in the UI, or in some cases an empty string. \
+But it should never be NULL.
+
 
 ### Steps to update keys
 
@@ -66,7 +85,7 @@ $ SORTKEY="3a33e5a0-333b-4651-8a9f-d8d9632714ec"          #change the value in q
 $ DISTID="LFTX"                                           #change the value in quotes
 
 $ JSON="{\"key\":\"$KEY\", \"secret\":\"$SECRET\", \
-\"dataAcctID\":\"$DATAID\", \"distID\":\"$DISTID\", \"sk\":\"SORTKEY\"}"
+\"dataAcctID\":\"$DATAID\", \"distID\":\"$DISTID\", \"sk\":\"$SORTKEY\"}"
 # just copy/paste the above two lines together
 
 $ curl -s -d "$JSON" -H 'Content-Type: application/json' $ENDPOINT/updateSecret | jq

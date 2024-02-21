@@ -20,8 +20,8 @@ exports.updateSecretHandler = async (event) => {
     try {
         item = await getItemByKey(db, {dataAccountId: dataAcctID, sk: sk,});
     } catch (err) {
-        console.log("Error retrieving item: ", err.message);
-        return jsonResponse(err, null, err.message);
+        console.error("DB lookup failed:", err.message);
+        return jsonResponse(err, null, "Error retrieving item by key.");
     }
 
     // get the distributor id's index in the matches array of the db entry
@@ -30,7 +30,7 @@ exports.updateSecretHandler = async (event) => {
         distIndex = getDistributorMatchIndex(item, distID);
     } catch (err) {
         console.error(err.message);
-        return jsonResponse(err, null, err.message);
+        return jsonResponse(err, null, "Error finding match in table item.");
     }
 
     // configure CS API call parameters
@@ -44,9 +44,9 @@ exports.updateSecretHandler = async (event) => {
         const csResponse = await testTx(cs_config, cs_request, cs_client);
         console.log('csResponse:', csResponse);
         txid = csResponse.data['id'];
-    } catch (error) {
-        console.error('Error:', error);
-        return jsonResponse(error, null, "Failed to authorize transaction.");
+    } catch (err) {
+        console.error('Failed to authorize transaction: ', err);
+        return jsonResponse(err, null, "Error: failed to authorize transaction.");
     }
 
     // make reversal call
@@ -54,9 +54,9 @@ exports.updateSecretHandler = async (event) => {
         try {
             const csResponse = await testTx(cs_config, cs_request, cs_client, txid);
             console.log('csResponse:', csResponse);
-        } catch (error) {
-            console.error('Error:', error);
-            return jsonResponse(error, null, `Failed to reverse transaction (ID: ${txid}).`);
+        } catch (err) {
+            console.error('Failed to reverse transaction:', err);
+            return jsonResponse(err, null, `Error: failed to reverse transaction (ID: ${txid}).`);
         }
     }
 
@@ -94,7 +94,6 @@ exports.updateSecretHandler = async (event) => {
             }).promise();
 
             // and remove the distributor from its original entry
-            //const updateExpression = `REMOVE matches[${distIndex}]`;
             await db.client.update({
                 TableName: db.tableName,
                 Key: {
@@ -106,30 +105,25 @@ exports.updateSecretHandler = async (event) => {
         }
     } catch (err) {
         console.error("Failed to update database after testing key:", err.message);
-        return jsonResponse(err, null, "Failed to update database after testing key:");
+        return jsonResponse(err, null, "Failed to update database after testing key.");
     }
+    // TODO: return the new db entry in the data field?
     return jsonResponse(null, null, "Successfully updated keys.");
 }
 
 async function getItemByKey(db, key) {
-    try {
-        let dbResponse = await db.client.get({TableName: db.tableName, Key: key}).promise();
-        if (dbResponse.Item) {
-            return dbResponse.Item;
-        }
-    } catch (err) {
-        console.error("DB lookup failed:", err.message);
-        throw err;
+    let dbResponse = await db.client.get({TableName: db.tableName, Key: key}).promise();
+    if (dbResponse.Item) {
+        return dbResponse.Item;
     }
-    console.error("Could not find db item with key: ", key);
-    throw new Error("Could not find db item with the provided key.");
+    throw new Error("Could not find db item with these keys.");
 }
 
 function getDistributorMatchIndex(item, distributor) {
     if (item.matches instanceof Array) {
         const matchIndex = item.matches.findIndex(match => match.distributorId === distributor);
         if (matchIndex === -1) {
-            throw new Error("DB entry does not contain the provided distributor ID.");
+            throw new Error(`DB entry does not contain distributor {${distributor}.`);
         }
         const duplicateIndex = item.matches.findIndex((match, index) => match.distributorId === distributor && index !== matchIndex);
         if (duplicateIndex !== -1) {
@@ -142,29 +136,22 @@ function getDistributorMatchIndex(item, distributor) {
 }
 
 
-function testTx(cs_config, cs_request, cs_client, reverseTxId="") {
+async function testTx(cs_config, cs_request, cs_client, reverseTxId="") {
     return new Promise((resolve, reject) => {
         function callback(error, data, response) {
             if (error) {
-                console.log('\nError : ' + JSON.stringify(error));
                 reject(error);
             } else {
-                console.log('\nData : ' + JSON.stringify(data));
-                console.log('\nResponse : ' + JSON.stringify(response));
-                resolve({error, data, response});
+                resolve({data, response});
             }
         }
-        try {
-            if (reverseTxId) {
-                let instance = new cybersourceRestApi.ReversalApi(cs_config, cs_client);
-                instance.authReversal(reverseTxId, cs_request, callback);
-            } else {
-                let instance = new cybersourceRestApi.PaymentsApi(cs_config, cs_client);
-                instance.createPayment(cs_request, callback);
-            }
-        } catch (error) {
-            console.log('\nException on calling the API for auth : ' + error);
-            reject(error);
+
+        if (reverseTxId) {
+            let instance = new cybersourceRestApi.ReversalApi(cs_config, cs_client);
+            instance.authReversal(reverseTxId, cs_request, callback);
+        } else {
+            let instance = new cybersourceRestApi.PaymentsApi(cs_config, cs_client);
+            instance.createPayment(cs_request, callback);
         }
     });
 }
