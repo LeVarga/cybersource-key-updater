@@ -1,13 +1,13 @@
 name:  Deploy Frontend
 
 on:
-  # push:
-  #   branches: [ "master" ]
-  #   paths: ['react-frontend/**']
+  push:
+    branches: [ "master" ]
+    paths: ['react-frontend/**']
     
-  # pull_request:
-  #   branches: [ "master" ]
-  #   paths: ['react-frontend/**']
+  pull_request:
+    branches: [ "master" ]
+    paths: ['react-frontend/**']
 
   workflow_dispatch:
 
@@ -22,7 +22,7 @@ jobs:
     
     - name: Test Docker Build
       run: |
-        docker build ./react-frontend --tag levarga/cybersource-key-updater-frontend:$(date +%s)
+        docker build ./vite-frontend --tag levarga/cybersource-key-updater-frontend:$(date +%s)
 
     - name: SSH and Deploy Docker
       uses: appleboy/ssh-action@v1.0.3
@@ -32,7 +32,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script_stop: true
         script: |
-          cd ~/cybersource-key-updater/react-frontend
+          cd ~/cybersource-key-updater/vite-frontend
           git pull
           docker build -t cs180-frontend .
           docker rm -f cs180-frontend || true
