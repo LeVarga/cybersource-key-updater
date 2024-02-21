@@ -4,11 +4,14 @@ const jsonResponse = require("../jsonResponse")
 
 exports.getDistributorsHandler = async (event)  => {
     if (event.httpMethod !== 'GET') {
-        throw new Error(`This function only accepts GET requests.`);
+        return jsonResponse(Error(), null, "Error: this function only accepts GET requests.")
     }
     console.log('received:', JSON.stringify(event));
     const dataAcctID = event.queryStringParameters?.dataAcctID;
-    if (!dataAcctID) return jsonResponse(null, null, "Error: did not receive a valid account ID.");
+    if (!dataAcctID) {
+        console.error("Error: did not receive a valid account ID.")
+        return jsonResponse(Error(), null, "Error: did not receive a valid account ID.");
+    }
 
     const dbQuery = {
         TableName: db.tableName,
@@ -25,9 +28,9 @@ exports.getDistributorsHandler = async (event)  => {
                 results.push({distID: match.distributorId, sk: entry.sk, active: entry.active});
             });
         });
-        return jsonResponse(null, results, !results ? "Could not find any distributors using that client ID.": "");
+        return jsonResponse(null, results, !results.length ? "Could not find any distributors using that client ID.": "");
     } catch (err) {
-        console.log(err.message);
-        return jsonResponse(err, null, "Database query failed.");
+        console.error(err.message);
+        return jsonResponse(err, null, "Error: database query failed.");
     }
 }

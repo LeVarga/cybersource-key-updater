@@ -53,40 +53,29 @@ async function deleteAll(db, items, key) {
             Key: keyParam
         }).promise();
     });
-    return Promise.all(promises).catch(err => {
-        console.error('An error occurred while deleting items:', err.message);
-        throw err;
-    });
+    return Promise.all(promises);
 }
 
 async function fetchAll(db) {
-    let existingContents = [];
-    try {
-        let params = {TableName: db.tableName};
-        let dbResult;
-        do {
-            dbResult = await db.client.scan(params).promise();
-            existingContents.push(...dbResult.Items);
-            params.ExclusiveStartKey = dbResult.LastEvaluatedKey;
-        } while (typeof dbResult.LastEvaluatedKey !== "undefined");
-        return existingContents;
-    } catch (err) {
-        console.error("Error scanning existing table items:", err.message);
-        throw err;
-    }
+    let existingContents = [], params = {TableName: db.tableName}, dbResult = {};
+    do {
+        dbResult = await db.client.scan(params).promise();
+        existingContents.push(...dbResult.Items);
+        params.ExclusiveStartKey = dbResult.LastEvaluatedKey;
+    } while (typeof dbResult.LastEvaluatedKey !== "undefined");
+    return existingContents;
 }
 
 
 exports.testingHandler = async (event)  => {
     if (event.httpMethod !== 'GET') {
-        const e = new Error(`This function only accepts GET requests.`);
-        return jsonResponse(e, null, e.message);
+        return jsonResponse(Error(), null, `This function only accepts GET requests.`);
     }
     console.log('received:', JSON.stringify(event));
     const action = event.queryStringParameters?.action;
     if (action !== 'initdb' && action !== 'scandb') {
-        const e = new Error("No valid action specified.");
-        return jsonResponse(e, null, e.message);
+        console.error("No valid action specified.");
+        return jsonResponse(Error(), null, "No valid action specified.");
     }
 
     let dbContent;
@@ -97,9 +86,9 @@ exports.testingHandler = async (event)  => {
         return jsonResponse(err, null, "An error occurred while fetching all table values.");
     }
     if (action === "initdb") {
-        return initTable(db, dbContent)
+        return initTable(db, dbContent); // already handles errors
     } else if (action === "scandb") {
-        return jsonResponse(null, dbContent, `Retrieved ${dbContent.length} entries.`)
+        return jsonResponse(null, dbContent, `Retrieved ${dbContent.length} entries.`)  // shouldn't fail
     }
 }
 
@@ -144,7 +133,7 @@ async function initTable(db, existingContents) {
         console.log(`Successfully generated ${items.length} entries.`)
         return jsonResponse(null, null,  `Successfully generated ${items.length} clients.`);
     } catch (err) {
-        console.log("Error inserting new db items:", err.message);
+        console.error("Error inserting new db items:", err.message);
         return jsonResponse(err, null, "Error inserting new database items.");
     }
 }
