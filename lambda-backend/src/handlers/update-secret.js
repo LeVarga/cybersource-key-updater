@@ -70,15 +70,16 @@ exports.updateSecretHandler = async (event) => {
                     sk: sk,
                     dataAccountId: dataAcctID,
                 },
-                UpdateExpression: "SET #processorData.#secret = :s, #processorData.#key = :k",
+                UpdateExpression: "SET #secret = :s, #keyid = :k, #timestamp = :t",
                 ExpressionAttributeNames: {
-                    "#processorData": "processorData",
-                    "#secret": "secret",
-                    "#key": "key",
+                    "#secret": "processorData.secret",
+                    "#keyid":  "processorData.key",
+                    "#timestamp": "lastUpdated",
                 },
                 ExpressionAttributeValues: {
                     ":s": secret,
                     ":k": key,
+                    ":t": (new Date).toISOString()
                 },
             }).promise();
         } else {
@@ -90,6 +91,7 @@ exports.updateSecretHandler = async (event) => {
             newEntry.processorData.secret = secret;
             newEntry.processorData.key = key;
             newEntry.sk = uuidv4();
+            newEntry.lastUpdated = (new Date).toISOString()
             await db.client.put({
                 TableName: db.tableName, Item: newEntry
             }).promise();
