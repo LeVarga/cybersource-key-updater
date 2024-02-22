@@ -25,10 +25,16 @@ exports.getDistributorsHandler = async (event)  => {
         let results = []
         dbResponse.Items.forEach((entry) => {
             entry?.matches.forEach((match) => {
-                results.push({distID: match.distributorId, sk: entry.sk, active: entry.active});
+                results.push({
+                    distID: match.distributorId,
+                    merchantID: entry.processorData.externalAccount,
+                    lastUpdated: entry?.lastUpdated,
+                    sk: entry.sk,
+                    active: entry.active});
             });
         });
-        return jsonResponse(null, results, !results.length ? "Could not find any distributors using that client ID.": "");
+        if (results.length) return jsonResponse(null, results);
+        return jsonResponse(Error(), null, "Could not find any distributors using that client ID.");
     } catch (err) {
         console.error(err.message);
         return jsonResponse(err, null, "Error: database query failed.");
