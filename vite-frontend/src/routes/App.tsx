@@ -129,12 +129,11 @@ export default function App() {
             {currentStep == 2 ? Textbox({
               name: "key",
               id: "inline-key",
-              value: inputs.dataAcctID, disabled: false, label: "Key", handleChange}) : null}
+              value: inputs.key, disabled: false, label: "Key", handleChange}) : null}
             {currentStep == 2 ? Textbox({
               name: "secret",
               id: "inline-secret",
-              value: inputs.dataAcctID, disabled: false, label: "Secret", handleChange})
-                : null}
+              value: inputs.secret, disabled: false, label: "Secret", handleChange}) : null}
             {currentStep == 1 ? distributorCheckboxes : null}
             <button
                 className="shadow bg-red focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded float-right"
