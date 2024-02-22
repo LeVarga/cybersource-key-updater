@@ -13,10 +13,10 @@ export default function App() {
     distIDs: '',
   });
 
-  const [result, setResult] = useState<{}[]>([])
+  const [result, setResult] = useState<Array<any>>([])
   const [loading, setLoading] = useState(false);
   const [resultMessage, setResultMessage] = useState("");
-  const [error, setError] = useState(Error);
+  const [_error, setError] = useState(Error);
   const [currentStep, setStep] = useState(0);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

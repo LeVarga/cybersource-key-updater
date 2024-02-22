@@ -10,7 +10,7 @@ import './index.css'
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App merchantId='000_A1' distID='B' dataAcctID='50'/>,
+    element: <App/>,
     errorElement: <ErrorPage/>
   },
   {
