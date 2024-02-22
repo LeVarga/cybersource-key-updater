@@ -11,6 +11,7 @@ export default function App() {
     dataAcctID: '',
     sk: '',
     distIDs: '',
+    merchantID: '',
   });
 
   const [result, setResult] = useState<Array<any>>([])
@@ -108,11 +109,32 @@ export default function App() {
       <div className='bg-white grid grid-cols-2'>
         <Sidebar/>
         <div className='w-full'>
+          {/* menu title */}
           <h1 className='text-left mx-4 pt-4 pb-2'>Payment Key Validation</h1>
-          {Textbox({name: "dataAcctID", id: "inline-dataAcctID", value: inputs.dataAcctID, disabled: currentStep != 0, label: "Data Account ID", handleChange})}
-          {currentStep == 2 ? Textbox({name: "key", id: "inline-key", value: inputs.dataAcctID, disabled: false, label: "Key", handleChange}) : null}
-          {currentStep == 2 ? Textbox({name: "secret", id: "inline-secret", value: inputs.dataAcctID, disabled: false, label: "Secret", handleChange}) : null}
+
+          {/* area containing current ids */}
+          {currentStep == 2 ?
+              <div className='grid grid-cols-2 items-start my-4'>
+                <span className='bg-lightGray-300 mx-4 w-auto p-1 rounded font-bold'>Merchant ID: {inputs.merchantID}</span>
+                <span className='bg-lightGray-200 mx-4 w-auto p-1 rounded'>Distributors: {inputs.distIDs.toString()}</span>
+              </div> : null}
+
+          {/* dynamic form for all input */}
           <form className="w-full" onSubmit={handleSubmit} id="submit">
+            {Textbox({
+              name: "dataAcctID",
+              id: "inline-dataAcctID",
+              value: inputs.dataAcctID, disabled: currentStep != 0, label: "Data Account ID", handleChange
+            })}
+            {currentStep == 2 ? Textbox({
+              name: "key",
+              id: "inline-key",
+              value: inputs.dataAcctID, disabled: false, label: "Key", handleChange}) : null}
+            {currentStep == 2 ? Textbox({
+              name: "secret",
+              id: "inline-secret",
+              value: inputs.dataAcctID, disabled: false, label: "Secret", handleChange})
+                : null}
             {currentStep == 1 ? distributorCheckboxes : null}
             <button
                 className="shadow bg-red focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded float-right"
@@ -120,6 +142,8 @@ export default function App() {
               Validate
             </button>
           </form>
+
+          {/* Loading indicator / API message */}
           {loading ? <div className="spinner"></div> : <div>{resultMessage}</div>}
         </div>
 
