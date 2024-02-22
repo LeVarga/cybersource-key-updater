@@ -16,26 +16,26 @@ exports.updateSecretHandler = async (event) => {
     const { key, secret, dataAcctID, distID, sk } = JSON.parse(event.body);
 
     // get the appropriate db entry
-    let item;
+    let oldEntry;
     try {
-        item = await getItemByKey(db, {dataAccountId: dataAcctID, sk: sk,});
+        oldEntry = await getItemByKey(db, {dataAccountId: dataAcctID, sk: sk,});
     } catch (err) {
         console.error("DB lookup failed:", err.message);
         return jsonResponse(err, null, "Error retrieving item by key.");
     }
 
-    // get the distributor id's index in the matches array of the db entry
-    let distIndex;
+    // Create new matches array with the distributor IDs we need to update (may or may not be all of the entry)
+    let newMatches = [];
     try {
-        distIndex = getDistributorMatchIndex(item, distID);
+        newMatches = buildNewMatches(oldEntry, distID instanceof Array ? distID : [distID]);
     } catch (err) {
         console.error(err.message);
-        return jsonResponse(err, null, "Error finding match in table item.");
+        return jsonResponse(err, null, "Error validating the distributor IDs to update.");
     }
 
     // configure CS API call parameters
     const cs_client = new cybersourceRestApi.ApiClient();
-    const cs_config = new paymentApiConfig(key, secret, item.processorData);
+    const cs_config = new paymentApiConfig(key, secret, oldEntry.processorData);
     const cs_request = new paymentRequest();
     let txid = "";
 
@@ -60,21 +60,21 @@ exports.updateSecretHandler = async (event) => {
         }
     }
 
-
     // update db
     try {
-        if (item.matches.length === 1) {
-            // when this is already the only dist id using the key, update existing entry only
+        if (oldEntry.matches.length === newMatches.length) {
+            // when updating all distributors using this client, just update the existing entry
             await db.client.update({
                 TableName: db.tableName,
                 Key: {
                     sk: sk,
                     dataAccountId: dataAcctID,
                 },
-                UpdateExpression: "set #secret = :s, #key = :k",
+                UpdateExpression: "SET #processorData.#secret = :s, #processorData.#key = :k",
                 ExpressionAttributeNames: {
-                    "#key": "key",
+                    "#processorData": "processorData",
                     "#secret": "secret",
+                    "#key": "key",
                 },
                 ExpressionAttributeValues: {
                     ":s": secret,
@@ -82,10 +82,11 @@ exports.updateSecretHandler = async (event) => {
                 },
             }).promise();
         } else {
-            // otherwise create new entry with that dist id and new key/secret and sort key, but everything else same
+            // otherwise, when updating one or more but not all, add new entry with those dist ids and new key/secret,
+            // sort key, but duplicate everything else
             let  newEntry = {}
-            Object.assign(newEntry, item);
-            newEntry.matches = [item.matches[distIndex]];
+            Object.assign(newEntry, oldEntry); // deep copies oldEntry into newEntry
+            newEntry.matches = newMatches;
             newEntry.processorData.secret = secret;
             newEntry.processorData.key = key;
             newEntry.sk = uuidv4();
@@ -93,14 +94,17 @@ exports.updateSecretHandler = async (event) => {
                 TableName: db.tableName, Item: newEntry
             }).promise();
 
-            // and remove the distributor from its original entry
+            // and remove those distributors from the other entry (everything else stays)
             await db.client.update({
                 TableName: db.tableName,
                 Key: {
                     sk: sk,
                     dataAccountId: dataAcctID,
                 },
-                UpdateExpression: `REMOVE matches[${distIndex}]`,
+                UpdateExpression: `set matches = :withoutUpdated`,
+                ExpressionAttributeValues: {
+                    ":withoutUpdated": oldEntry.matches.filter(x => !newMatches.includes(x)),
+                },
             }).promise();
         }
     } catch (err) {
@@ -119,22 +123,28 @@ async function getItemByKey(db, key) {
     throw new Error("Could not find db item with these keys.");
 }
 
-function getDistributorMatchIndex(item, distributor) {
+function buildNewMatches(item, distributors) {
     if (item.matches instanceof Array) {
-        const matchIndex = item.matches.findIndex(match => match.distributorId === distributor);
-        if (matchIndex === -1) {
-            throw new Error(`DB entry does not contain distributor {${distributor}.`);
-        }
-        const duplicateIndex = item.matches.findIndex((match, index) => match.distributorId === distributor && index !== matchIndex);
-        if (duplicateIndex !== -1) {
-            throw new Error("Database error: found duplicate distributor IDs in entry.");
-        }
-        return matchIndex;
+        let distributorsToUpdate = [];
+        distributors.forEach((distributor) => {
+            if (distributorsToUpdate.find(existing => existing.distributorId === distributor)) {
+                throw new Error(`Duplicate distributor ID ${distributor} found in input.`);
+            }
+            const matchElem = item.matches.find(match => match.distributorId === distributor);
+            if (!matchElem) {
+                throw new Error(`DB entry does not contain distributor ${distributor}.`);
+            }
+            const duplicate = item.matches.find((match) => match.distributorId === distributor && match !== matchElem);
+            if (duplicate) {
+                throw new Error(`DB Integrity error: ${item.sk} contains duplicates of distributor ID ${distributor}`);
+            }
+            distributorsToUpdate.push(matchElem);
+        });
+        return distributorsToUpdate;
     } else {
         throw new Error("No matches array found in DB entry.");
     }
 }
-
 
 async function testTx(cs_config, cs_request, cs_client, reverseTxId="") {
     return new Promise((resolve, reject) => {
