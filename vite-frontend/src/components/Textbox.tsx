@@ -1,7 +1,7 @@
 
 export default function Textbox(props: { name: string, id: string, value: string, label: string, handleChange: React.ChangeEventHandler<HTMLInputElement>, disabled: boolean }): JSX.Element {
     return (
-        <div className="mb-8 ml-4">
+        <div className="mb-8 ml-4 flex-grow mr-4">
             <label className="block text-gray-500 font-bold mb-1 text-left"
                 htmlFor={props.id}>
                 {props.label}
