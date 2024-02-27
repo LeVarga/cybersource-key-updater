@@ -137,9 +137,9 @@ export default function App() {
   };
   
     return (
-      <div className=' bg-emerald-900 grid grid-cols-7'>
+      <div className=' bg-white grid grid-cols-7'>
         <Sidebar/>
-        <div className='col-span-3 bg-white'>
+        <div className='col-span-3'>
           {/* menu title */}
           <h1 className='text-2xl text-left font-bold text-black mb-4 mt-4 ml-4'>Payment Configuration Update</h1>
 
@@ -159,6 +159,9 @@ export default function App() {
               </button>
             </div>
           </form>
+
+
+
           {currentStep == 1? <ClientComponent accountId={inputs.dataAcctID} sk={inputs.sk} distributors={result}/> : null}
           
 
@@ -180,7 +183,35 @@ export default function App() {
           {/* Loading indicator / API message */}
           {loading ? <div className="spinner"></div> : <div>{resultMessage}</div>}
         </div>
-
+        <div className="col-span-3">
+          <div className='flex justify-center flex-grow bg-w'>
+          <div className="mb-4 mt-20">
+            <h1 className="text-xl font-semibold mb-3">Payment Key Validation</h1>
+            <div className="flex space-x-4 mb-6">
+              <button className="border bg-lightGray-200 rounded px-4 py-1 text-sm font-semibold cursor-pointer focus:outline-none">Distributor A</button>
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Key ID
+              </label>
+              <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="key-id" type="text" placeholder="Input Key ID...">
+                </input>
+            </div>
+            <div className="mb-6">
+              <label className="block text-gray-700 text-sm font-bold mb-2" >
+                Key Secret
+              </label>
+              <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="key-secret" type="text" placeholder="Input Key Secret..."/>
+            </div>
+            <div className="flex items-center justify-between">
+              <button className="bg-red text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
+                Validate
+              </button>
+            </div>
+          </div>
+          </div>
+   
+        </div>
       </div>
   )
 }
