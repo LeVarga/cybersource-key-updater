@@ -19,6 +19,8 @@ export default function App() {
   const [resultMessage, setResultMessage] = useState("");
   const [_error, setError] = useState(Error);
   const [currentStep, setStep] = useState(0);
+  const [selectedDistributors, setSelectedDistributors] = useState(new Set());
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -27,6 +29,24 @@ export default function App() {
       [name]: value
     }));
   };
+  const handleDistributorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const distID = e.target.name;
+    setSelectedDistributors(prevSelected => {
+      const newSelected = new Set(prevSelected);
+      if (newSelected.has(distID)) {
+        newSelected.delete(distID);
+      } else {
+        newSelected.add(distID);
+      }
+      return newSelected;
+    });
+  };
+  const distributorButtons = Array.from(selectedDistributors).map((distID:any) => (
+    <button key={distID} className="border bg-lightGray-200 rounded px-4 py-1 text-sm font-semibold cursor-pointer focus:outline-none">
+      {distID}
+    </button>
+  ));
+
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -109,6 +129,20 @@ export default function App() {
       );
   });
   {currentStep == 1 ? distributorCheckboxes : null}
+            {currentStep == 2 ?
+              <div className='grid grid-cols-2 items-start my-4'>
+                <span className='bg-lightGray-300 mx-4 w-auto p-1 rounded font-bold'>Merchant ID: {inputs.merchantID}</span>
+                <span className='bg-lightGray-200 mx-4 w-auto p-1 rounded'>Distributors: {inputs.distIDs.toString()}</span>
+              </div> : null}
+          {currentStep == 2 ? Textbox({
+                name: "key",
+                id: "inline-key",
+                value: inputs.key, disabled: false, label: "Key", handleChange}) : null}
+          {currentStep == 2 ? Textbox({
+            name: "secret",
+            id: "inline-secret",
+            value: inputs.secret, disabled: false, label: "Secret", handleChange}) : null}
+        
   */
   const ClientComponent = (props: { accountId: string, sk: string, distributors: any}) => {
     return (
@@ -124,10 +158,18 @@ export default function App() {
             
                   {props.distributors.map((item: any) => (
                     <div className="flex space-x-4 items-center ">
-                    <input type="checkbox" id={item?.sk + item?.distID} name={item?.distID} data-sk={item?.sk} data-distID={item?.distID}/>
-                      <div className='bg-slate-300 mb-4 rounded-lg w-1/4' key={item?.sk + item?.distID}>
+                      <input 
+                      type="checkbox" 
+                      id={item?.sk + item?.distID} 
+                      name={item?.distID} 
+                      data-sk={item?.sk} 
+                      data-distID={item?.distID}
+                      onChange={handleDistributorChange}
+                      checked={selectedDistributors.has(item?.distID)}
+                    />
+                    <div className='bg-gray-200 mb-4 rounded-lg w-2/4' key={item?.sk + item?.distID}>
                           <label htmlFor={item?.sk + item?.distID}>Distributor  {item?.distID}</label>
-                      </div>
+                    </div>
                     </div>
                   ))}
               </div>
@@ -144,8 +186,7 @@ export default function App() {
           {/* menu title */}
           <h1 className='text-2xl text-left font-bold text-black mb-4 mt-4 ml-4'>Payment Configuration Update</h1>
 
-          {/* area containing current ids */}
-          {/* dynamic form for all input */}
+
           <form className="w-full" onSubmit={handleSubmit} id="submit">
               <div className='flex flex-row space-x-1 bg-white items-center px-4 py-2'>
               {Textbox({
@@ -162,25 +203,8 @@ export default function App() {
           </form>
 
 
-
           {currentStep == 1? <ClientComponent accountId={inputs.dataAcctID} sk={inputs.sk} distributors={result}/> : null}
           
-
-          {currentStep == 2 ?
-              <div className='grid grid-cols-2 items-start my-4'>
-                <span className='bg-lightGray-300 mx-4 w-auto p-1 rounded font-bold'>Merchant ID: {inputs.merchantID}</span>
-                <span className='bg-lightGray-200 mx-4 w-auto p-1 rounded'>Distributors: {inputs.distIDs.toString()}</span>
-              </div> : null}
-          {currentStep == 2 ? Textbox({
-                name: "key",
-                id: "inline-key",
-                value: inputs.key, disabled: false, label: "Key", handleChange}) : null}
-          {currentStep == 2 ? Textbox({
-            name: "secret",
-            id: "inline-secret",
-            value: inputs.secret, disabled: false, label: "Secret", handleChange}) : null}
-      
-
           {/* Loading indicator / API message */}
           {loading ? <div className="spinner"></div> : <div>{resultMessage}</div>}
         </div>
@@ -191,7 +215,9 @@ export default function App() {
           <div className="mb-4 mt-20">
             <h1 className="text-xl font-semibold mb-3">Payment Key Validation</h1>
             <div className="flex space-x-4 mb-6">
-              <button className="border bg-lightGray-200 rounded px-4 py-1 text-sm font-semibold cursor-pointer focus:outline-none">Distributor A</button>
+            {distributorButtons.length > 0 ? distributorButtons : (
+              <span></span>
+            )}
             </div>
             <div className="mb-4">
               {Textbox({
