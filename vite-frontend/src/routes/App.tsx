@@ -29,7 +29,13 @@ export default function App() {
       [name]: value
     }));
   };
+
+
+  // handleDistributorChange and distributorButtons dynamically show what distributors 
+  // the user has chosen
+  // TODO: integrate with functionality
   const handleDistributorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //setStep(1);
     const distID = e.target.name;
     setSelectedDistributors(prevSelected => {
       const newSelected = new Set(prevSelected);
@@ -41,6 +47,7 @@ export default function App() {
       return newSelected;
     });
   };
+
   const distributorButtons = Array.from(selectedDistributors).map((distID:any) => (
     <button key={distID} className="border bg-lightGray-200 rounded px-4 py-1 text-sm font-semibold cursor-pointer focus:outline-none">
       {distID}
@@ -82,6 +89,8 @@ export default function App() {
           });
     } else if (currentStep == 1) { // step 1 is selecting the distributor ID(s) to update
       // TODO: set the values from the selected checkboxes here
+
+      // handled with -handleDistributorChange-, TODO: integrate it with the step logic 
       setStep(2);
       setLoading(false);
 
@@ -155,7 +164,6 @@ export default function App() {
                   Sort Key: {props.sk}
               </div>
               <div className="ml-5">
-            
                   {props.distributors.map((item: any) => (
                     <div className="flex space-x-4 items-center ">
                       <input 
@@ -185,8 +193,6 @@ export default function App() {
         <div className='col-span-3'>
           {/* menu title */}
           <h1 className='text-2xl text-left font-bold text-black mb-4 mt-4 ml-4'>Payment Configuration Update</h1>
-
-
           <form className="w-full" onSubmit={handleSubmit} id="submit">
               <div className='flex flex-row space-x-1 bg-white items-center px-4 py-2'>
               {Textbox({
@@ -202,46 +208,49 @@ export default function App() {
             </div>
           </form>
 
-
-          {currentStep == 1? <ClientComponent accountId={inputs.dataAcctID} sk={inputs.sk} distributors={result}/> : null}
-          
+          {/* show client component when input is filled */}
+          {currentStep == 2? <ClientComponent accountId={inputs.dataAcctID} sk={inputs.sk} distributors={result}/> : null}
+        
           {/* Loading indicator / API message */}
           {loading ? <div className="spinner"></div> : <div>{resultMessage}</div>}
+          
         </div>
 
-        {/*  right side  */}
+        {/*  right side, step 2 */}
         <div className="col-span-3">
-          <div className='flex justify-center flex-grow bg-w'>
-          <div className="mb-4 mt-20">
-            <h1 className="text-xl font-semibold mb-3">Payment Key Validation</h1>
-            <div className="flex space-x-4 mb-6">
-            {distributorButtons.length > 0 ? distributorButtons : (
-              <span></span>
-            )}
+          {currentStep == 2 ?     
+            <div className='flex justify-center flex-grow bg-w'>
+            <div className="mb-4 mt-20">
+              <h1 className="text-xl font-semibold mb-3">Payment Key Validation</h1>
+              <div className="flex space-x-4 mb-6">
+              {distributorButtons.length > 0 ? distributorButtons : (
+                <span></span>
+              )}
+              </div>
+              <div className="mb-4">
+                {Textbox({
+                  name: "keyId",
+                  id: "inline-dataAcctID",
+                  value: "", disabled: false, label: "Key ID", handleChange
+                })}
+              </div>
+              <div className="mb-6">
+                {Textbox({
+                  name: "keyId",
+                  id: "inline-dataAcctID",
+                  value: "", disabled: false, label: "Key Secret", handleChange
+                })}
+              </div>
+              <div className="flex items-center justify-between">
+                <button className="bg-red text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
+                  Validate
+                </button>
+              </div>
             </div>
-            <div className="mb-4">
-              {Textbox({
-                name: "keyId",
-                id: "inline-dataAcctID",
-                value: "", disabled: false, label: "Key ID", handleChange
-              })}
-            </div>
-            <div className="mb-6">
-              {Textbox({
-                name: "keyId",
-                id: "inline-dataAcctID",
-                value: "", disabled: false, label: "Key Secret", handleChange
-              })}
-            </div>
-            <div className="flex items-center justify-between">
-              <button className="bg-red text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
-                Validate
-              </button>
-            </div>
-          </div>
-          </div>
-   
+            
+          </div> : null}
         </div>
+   
       </div>
   )
 }
