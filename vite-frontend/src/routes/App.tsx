@@ -35,7 +35,7 @@ export default function App() {
   // the user has chosen
   // TODO: integrate with functionality
   const handleDistributorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //setStep(1);
+    setStep(2);
     const distID = e.target.name;
     setSelectedDistributors(prevSelected => {
       const newSelected = new Set(prevSelected);
@@ -69,6 +69,7 @@ export default function App() {
             response.json().then((json) => {
               if (!json?.error) {
                 setStep(1);
+                //console.log(json.data);
                 setResult(json.data);
                 setResultMessage("");
               }
@@ -106,6 +107,7 @@ export default function App() {
             response.json().then((json) => {
               if (!json?.error) {
                 setStep(1);
+                
                 setResult(json.data);
                 setResultMessage("");
               }
@@ -160,8 +162,8 @@ export default function App() {
               <h2>Client: {props.accountId}</h2>
           </div>
           <div className="bg-white border-2 border-slate-400">
-              <div className="text-left bg-gray-400 m-5 rounded-lg flex justify-center w-2/5">
-                  Sort Key: {props.sk}
+              <div className="text-left bg-gray-400 m-5 rounded-lg flex  text-sm justify-center font-semibold gitw-2/5">
+                  Sort Key: {props.distributors[0].sk}
               </div>
               <div className="ml-5">
                   {props.distributors.map((item: any) => (
@@ -175,7 +177,7 @@ export default function App() {
                       onChange={handleDistributorChange}
                       checked={selectedDistributors.has(item?.distID)}
                     />
-                    <div className='bg-gray-200 mb-4 rounded-lg w-2/4' key={item?.sk + item?.distID}>
+                    <div className='bg-lightGray-200 mb-4 rounded-lg w-2/4 font-semibold cursor-pointer' key={item?.sk + item?.distID}>
                           <label htmlFor={item?.sk + item?.distID}>Distributor  {item?.distID}</label>
                     </div>
                     </div>
@@ -209,7 +211,7 @@ export default function App() {
           </form>
 
           {/* show client component when input is filled */}
-          {currentStep == 2? <ClientComponent accountId={inputs.dataAcctID} sk={inputs.sk} distributors={result}/> : null}
+          {currentStep == 1 || currentStep == 2? <ClientComponent accountId={inputs.dataAcctID} sk={inputs.sk} distributors={result}/> : null}
         
           {/* Loading indicator / API message */}
           {loading ? <div className="spinner"></div> : <div>{resultMessage}</div>}
