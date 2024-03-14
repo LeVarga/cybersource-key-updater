@@ -109,8 +109,6 @@ export default function App() {
             response.json().then((json) => {
               if (!json?.error) {
                 //setStep(1);
-                
-                setResult(json.data);
                 setResultMessage(json.message);
               }
               else {
