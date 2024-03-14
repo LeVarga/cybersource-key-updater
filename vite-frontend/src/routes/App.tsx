@@ -10,8 +10,7 @@ export default function App() {
     secret: '',
     dataAcctID: '',
     sk: '',
-    distIDs: '',
-    merchantID: '',
+    distID: Array<String>(),
   });
 
   const [result, setResult] = useState<Array<any>>([])
@@ -19,7 +18,6 @@ export default function App() {
   const [resultMessage, setResultMessage] = useState("");
   const [_error, setError] = useState(Error);
   const [currentStep, setStep] = useState(0);
-  const [selectedDistributors, setSelectedDistributors] = useState(new Set());
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,18 +35,21 @@ export default function App() {
   const handleDistributorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setStep(2);
     const distID = e.target.name;
-    setSelectedDistributors(prevSelected => {
-      const newSelected = new Set(prevSelected);
-      if (newSelected.has(distID)) {
-        newSelected.delete(distID);
-      } else {
-        newSelected.add(distID);
-      }
-      return newSelected;
-    });
+    inputs.sk = e.target.parentElement?.parentElement?.parentElement?.id || "UNDEFINED";
+    const newSelected = new Set(inputs.distID);
+    if (newSelected.has(distID)) {
+      newSelected.delete(distID);
+    } else {
+      newSelected.add(distID);
+    }
+    setInputs(prevState => ({
+      ...prevState,
+      distID: Array.from(newSelected)
+    }));
   };
 
-  const distributorButtons = Array.from(selectedDistributors).map((distID:any) => (
+
+  const distributorButtons = inputs.distID.map((distID:any) => (
     <button key={distID} className="border bg-lightGray-200 rounded px-4 py-1 text-sm font-semibold cursor-pointer focus:outline-none">
       {distID}
     </button>
@@ -96,6 +97,7 @@ export default function App() {
       setLoading(false);
 
     } else if (currentStep == 2) { // step 2 is getting the key/secret and submitting the update
+      console.log(JSON.stringify(inputs));
       fetch('https://yf6zmmg1j0.execute-api.us-west-1.amazonaws.com/Prod/updateSecret', {
         method: 'POST',
         headers: {
@@ -106,10 +108,10 @@ export default function App() {
           .then((response) => { // TODO: refactor this into a named function (it's mostly the same as step 0)
             response.json().then((json) => {
               if (!json?.error) {
-                setStep(1);
+                //setStep(1);
                 
                 setResult(json.data);
-                setResultMessage("");
+                setResultMessage(json.message);
               }
               else {
                 setResultMessage(json.message);
@@ -162,33 +164,34 @@ export default function App() {
               <h2>Client: {props.accountId}</h2>
           </div>
           <div className="bg-white border-2 border-slate-400">
+            <div id={props.distributors[0].sk}>
               <div className="text-left bg-gray-400 m-5 rounded-lg flex  text-sm justify-center font-semibold gitw-2/5">
-                  Sort Key: {props.distributors[0].sk}
+                Sort Key: {props.distributors[0].sk}
               </div>
               <div className="ml-5">
-                  {props.distributors.map((item: any) => (
+                {props.distributors.map((item: any) => (
                     <div className="flex space-x-4 items-center ">
-                      <input 
-                      type="checkbox" 
-                      id={item?.sk + item?.distID} 
-                      name={item?.distID} 
-                      data-sk={item?.sk} 
-                      data-distID={item?.distID}
-                      onChange={handleDistributorChange}
-                      checked={selectedDistributors.has(item?.distID)}
-                    />
-                    <div className='bg-lightGray-200 mb-4 rounded-lg w-2/4 font-semibold cursor-pointer' key={item?.sk + item?.distID}>
-                          <label htmlFor={item?.sk + item?.distID}>Distributor  {item?.distID}</label>
+                      <input
+                          type="checkbox"
+                          id={item?.sk + item?.distID}
+                          name={item?.distID}
+                          onChange={handleDistributorChange}
+                          checked={inputs.distID.includes(item?.distID)}
+                      />
+                      <div className='bg-lightGray-200 mb-4 rounded-lg w-2/4 font-semibold cursor-pointer'
+                           key={item?.sk + item?.distID}>
+                        <label htmlFor={item?.sk + item?.distID}>Distributor {item?.distID}</label>
+                      </div>
                     </div>
-                    </div>
-                  ))}
+                ))}
               </div>
+            </div>
           </div>
       </div>
     );
   };
-  
-    return (
+
+  return (
       <div className=' bg-white grid grid-cols-7'>
         <Sidebar/>
         {/*  left side  */}
@@ -196,63 +199,67 @@ export default function App() {
           {/* menu title */}
           <h1 className='text-2xl text-left font-bold text-black mb-4 mt-4 ml-4'>Payment Configuration Update</h1>
           <form className="w-full" onSubmit={handleSubmit} id="submit">
+            <div className="w-full">
               <div className='flex flex-row space-x-1 bg-white items-center px-4 py-2'>
-              {Textbox({
-                name: "dataAcctID",
-                id: "inline-dataAcctID",
-                value: inputs.dataAcctID, disabled: currentStep != 0, label: "Data Account ID", handleChange
-              })}
-              <button
-                  className="shadow bg-red focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded"
-                  type="submit">
-                Find
-              </button>
+                {Textbox({
+                  name: "dataAcctID",
+                  id: "inline-dataAcctID",
+                  value: inputs.dataAcctID, disabled: currentStep != 0, label: "Data Account ID", handleChange
+                })}
+                <button
+                    className="shadow bg-red focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded"
+                    type="submit">
+                  Find
+                </button>
+              </div>
             </div>
           </form>
 
           {/* show client component when input is filled */}
           {currentStep == 1 || currentStep == 2? <ClientComponent accountId={inputs.dataAcctID} sk={inputs.sk} distributors={result}/> : null}
-        
+
           {/* Loading indicator / API message */}
           {loading ? <div className="spinner"></div> : <div>{resultMessage}</div>}
-          
+
         </div>
 
         {/*  right side, step 2 */}
         <div className="col-span-3">
-          {currentStep == 2 ?     
-            <div className='flex justify-center flex-grow bg-w'>
-            <div className="mb-4 mt-20">
-              <h1 className="text-xl font-semibold mb-3">Payment Key Validation</h1>
-              <div className="flex space-x-4 mb-6">
-              {distributorButtons.length > 0 ? distributorButtons : (
-                <span></span>
-              )}
-              </div>
-              <div className="mb-4">
-                {Textbox({
-                  name: "keyId",
-                  id: "inline-dataAcctID",
-                  value: "", disabled: false, label: "Key ID", handleChange
-                })}
-              </div>
-              <div className="mb-6">
-                {Textbox({
-                  name: "keyId",
-                  id: "inline-dataAcctID",
-                  value: "", disabled: false, label: "Key Secret", handleChange
-                })}
-              </div>
-              <div className="flex items-center justify-between">
-                <button className="bg-red text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
-                  Validate
-                </button>
-              </div>
-            </div>
-            
-          </div> : null}
+          {currentStep == 2 ?
+              <form className="w-full" onSubmit={handleSubmit} id="submitKeys">
+                <div className='flex justify-center flex-grow bg-w'>
+                <div className="mb-4 mt-20">
+                  <h1 className="text-xl font-semibold mb-3">Payment Key Validation</h1>
+                  <div className="flex space-x-4 mb-6">
+                  {distributorButtons.length > 0 ? distributorButtons : (
+                    <span></span>
+                  )}
+                  </div>
+                  <div className="mb-4">
+                    {Textbox({
+                      name: "key",
+                      id: "inline-key",
+                      value: inputs.key, disabled: false, label: "Key ID", handleChange
+                    })}
+                  </div>
+                  <div className="mb-6">
+                    {Textbox({
+                      name: "secret",
+                      id: "inline-secret",
+                      value: inputs.secret, disabled: false, label: "Key Secret", handleChange
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <button className="bg-red text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                      Validate
+                    </button>
+                  </div>
+                </div>
+                </div>
+
+              </form> : null}
         </div>
-   
+
       </div>
   )
 }
