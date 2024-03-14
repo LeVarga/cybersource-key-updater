@@ -207,30 +207,33 @@ export default function App() {
                   value: inputs.dataAcctID, disabled: currentStep != 0, label: "Data Account ID", handleChange
                 })}
                 <button
+                    disabled={loading}
                     className="shadow bg-red focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded"
                     type="submit">
-                  Find
+                  {loading ? "Processing..." : "Find"}
                 </button>
               </div>
             </div>
           </form>
 
           {/* show client component when input is filled */}
-          {currentStep == 1 || currentStep == 2? <ClientComponent accountId={inputs.dataAcctID} sk={inputs.sk} distributors={result}/> : null}
+          {currentStep == 1 || currentStep == 2 ?
+              <ClientComponent accountId={inputs.dataAcctID} sk={inputs.sk} distributors={result}/> : null}
 
           {/* Loading indicator / API message */}
-          {loading ? <div className="spinner"></div> : <div>{resultMessage}</div>}
-
+          {loading ? <div className="border-gray-300 h-20 w-20 animate-spin rounded-full border-8 border-t-blue-600"/> :
+              <div>{resultMessage}</div>}
         </div>
+
 
         {/*  right side, step 2 */}
         <div className="col-span-3">
           {currentStep == 2 ?
               <form className="w-full" onSubmit={handleSubmit} id="submitKeys">
                 <div className='flex justify-center flex-grow bg-w'>
-                <div className="mb-4 mt-20">
-                  <h1 className="text-xl font-semibold mb-3">Payment Key Validation</h1>
-                  <div className="flex space-x-4 mb-6">
+                  <div className="mb-4 mt-20">
+                    <h1 className="text-xl font-semibold mb-3">Payment Key Validation</h1>
+                    <div className="flex space-x-4 mb-6">
                   {distributorButtons.length > 0 ? distributorButtons : (
                     <span></span>
                   )}
@@ -250,13 +253,12 @@ export default function App() {
                     })}
                   </div>
                   <div className="flex items-center justify-between">
-                    <button className="bg-red text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
-                      Validate
+                    <button className="bg-red text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" disabled={loading}>
+                      {loading ? "Processing..." : "Validate"}
                     </button>
                   </div>
                 </div>
                 </div>
-
               </form> : null}
         </div>
 
