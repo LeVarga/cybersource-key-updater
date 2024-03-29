@@ -74,6 +74,28 @@ Resources:
             Path: /updateSecret
             Method: POST
 
+  retrieveEntryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: src/handlers/retrieve-account.retrieveAccountHandler
+      Runtime: nodejs18.x
+      MemorySize: 256
+      Timeout: 60
+      Description: Retrieves the configuration for a single account using the primary key
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaymentAccount
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref PaymentAccount
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /retrieveAccount
+            Method: GET
+
   testingFunction:
     Type: AWS::Serverless::Function
     Properties:
