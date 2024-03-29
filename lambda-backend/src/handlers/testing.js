@@ -74,7 +74,6 @@ exports.testingHandler = async (event)  => {
     console.log('received:', JSON.stringify(event));
     const action = event.queryStringParameters?.action;
     if (action !== 'initdb' && action !== 'scandb') {
-        console.error("No valid action specified.");
         return jsonResponse(Error(), null, "No valid action specified.");
     }
 
@@ -82,7 +81,6 @@ exports.testingHandler = async (event)  => {
     try {
         dbContent = await fetchAll(db);
     } catch (err) {
-        console.error("An error occurred while fetching all table values:", err.message);
         return jsonResponse(err, null, "An error occurred while fetching all table values.");
     }
     if (action === "initdb") {
@@ -97,7 +95,6 @@ async function initTable(db, existingContents) {
     try {
         await deleteAll(db, existingContents, ["dataAccountId", "sk"]);
     } catch (err) {
-        console.error("An error occurred while clearing existing table values:", err.message);
         return jsonResponse(err, null, "An error occurred while clearing existing table values.");
     }
 
@@ -133,7 +130,6 @@ async function initTable(db, existingContents) {
         console.log(`Successfully generated ${items.length} entries.`)
         return jsonResponse(null, null,  `Successfully generated ${items.length} clients.`);
     } catch (err) {
-        console.error("Error inserting new db items:", err.message);
         return jsonResponse(err, null, "Error inserting new database items.");
     }
 }

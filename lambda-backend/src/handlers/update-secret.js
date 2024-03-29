@@ -1,3 +1,5 @@
+//DEPRECATED
+
 'use strict';
 
 const cybersourceRestApi= require('cybersource-rest-client');
@@ -18,9 +20,8 @@ exports.updateSecretHandler = async (event) => {
     // get the appropriate db entry
     let oldEntry;
     try {
-        oldEntry = await getItemByKey(db, {dataAccountId: dataAcctID, sk: sk,});
+        oldEntry = await db.getItemByKey(db, {dataAccountId: dataAcctID, sk: sk,});
     } catch (err) {
-        console.error("DB lookup failed:", err.message);
         return jsonResponse(err, null, "Error retrieving item by key.");
     }
 
@@ -29,7 +30,6 @@ exports.updateSecretHandler = async (event) => {
     try {
         newMatches = buildNewMatches(oldEntry, distID instanceof Array ? distID : [distID]);
     } catch (err) {
-        console.error(err.message);
         return jsonResponse(err, null, "Error validating the distributor IDs to update.");
     }
 
@@ -45,7 +45,6 @@ exports.updateSecretHandler = async (event) => {
         console.log('csResponse:', csResponse);
         txid = csResponse.data['id'];
     } catch (err) {
-        console.error('Failed to authorize transaction: ', err);
         return jsonResponse(err, null, "Error: failed to authorize transaction.");
     }
 
@@ -55,7 +54,6 @@ exports.updateSecretHandler = async (event) => {
             const csResponse = await testTx(cs_config, cs_request, cs_client, txid);
             console.log('csResponse:', csResponse);
         } catch (err) {
-            console.error('Failed to reverse transaction:', err);
             return jsonResponse(err, null, `Error: failed to reverse transaction (ID: ${txid}).`);
         }
     }
@@ -110,19 +108,10 @@ exports.updateSecretHandler = async (event) => {
             }).promise();
         }
     } catch (err) {
-        console.error("Failed to update database after testing key:", err.message);
         return jsonResponse(err, null, "Failed to update database after testing key.");
     }
     // TODO: return the new db entry in the data field?
     return jsonResponse(null, null, "Successfully updated keys.");
-}
-
-async function getItemByKey(db, key) {
-    let dbResponse = await db.client.get({TableName: db.tableName, Key: key}).promise();
-    if (dbResponse.Item) {
-        return dbResponse.Item;
-    }
-    throw new Error("Could not find db item with these keys.");
 }
 
 function buildNewMatches(item, distributors) {

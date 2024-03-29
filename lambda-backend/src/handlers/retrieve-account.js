@@ -14,7 +14,6 @@ exports.retrieveAccountHandler = async (event)  => {
     const dataAcctID = event.queryStringParameters?.dataAcctID;
     const sk = event.queryStringParameters?.sk;
     if (!(dataAcctID && sk)) {
-        console.error("Error: did not receive primary key (dataAcctID & sk.)");
         return jsonResponse(Error(), null, "Error: did not receive primary key (dataAcctID & sk.)");
     }
 
@@ -26,7 +25,6 @@ exports.retrieveAccountHandler = async (event)  => {
         }
         return jsonResponse(null, entry, "Successfully retrieved. Note: secret redacted.")
     } catch (err) {
-        console.error("DB lookup failed:", err.message);
         return jsonResponse(err, null, "Error retrieving item: " + err.message);
     }
 }

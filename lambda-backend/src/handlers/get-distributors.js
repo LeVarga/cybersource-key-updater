@@ -9,8 +9,7 @@ exports.getDistributorsHandler = async (event)  => {
     console.log('received:', JSON.stringify(event));
     const dataAcctID = event.queryStringParameters?.dataAcctID;
     if (!dataAcctID) {
-        console.error("Error: did not receive a valid account ID.")
-        return jsonResponse(Error(), null, "Error: did not receive a valid account ID.");
+          return jsonResponse(Error(), null, "Error: did not receive a valid account ID.");
     }
 
     const dbQuery = {
@@ -22,7 +21,8 @@ exports.getDistributorsHandler = async (event)  => {
     };
     try {
         const dbResponse = await db.client.query(dbQuery).promise();
-        let results = []
+        let results = [];
+        // TODO: group by sk (or merchant id?)
         dbResponse.Items.forEach((entry) => {
             entry?.matches.forEach((match) => {
                 results.push({
@@ -36,7 +36,6 @@ exports.getDistributorsHandler = async (event)  => {
         if (results.length) return jsonResponse(null, results);
         return jsonResponse(Error(), null, "Could not find any distributors using that client ID.");
     } catch (err) {
-        console.error(err.message);
         return jsonResponse(err, null, "Error: database query failed.");
     }
 }
