@@ -7,6 +7,7 @@ function corsHeaders(contentType) {
 }
 
 function jsonResponse(error, data=null, message="") {
+    if (error) console.error(message, error.message)
     return {
         statusCode: error ? 400 : 200,
         headers: corsHeaders('application/json'),

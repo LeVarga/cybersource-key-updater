@@ -74,7 +74,7 @@ Resources:
             Path: /updateSecret
             Method: POST
 
-  retrieveEntryFunction:
+  retrieveAccountFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./
@@ -95,6 +95,28 @@ Resources:
           Properties:
             Path: /retrieveAccount
             Method: GET
+
+  saveAccountFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: src/handlers/save-account.saveAccountHandler
+      Runtime: nodejs18.x
+      MemorySize: 512
+      Timeout: 60
+      Description: Updates or creates a payment account
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaymentAccount
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref PaymentAccount
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /saveAccount
+            Method: POST
 
   testingFunction:
     Type: AWS::Serverless::Function
