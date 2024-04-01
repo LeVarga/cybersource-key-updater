@@ -2,25 +2,26 @@ import { useState } from 'react'
 import Textbox from '../components/Textbox';
 import Sidebar from "../components/sidebar/Sidebar";
 import './App.css'
+import Label from "../components/Label.tsx";
 
 export default function App() {
 
   const [inputs, setInputs] = useState({
-    key: '',
-    secret: '',
     dataAcctID: '',
     sk: '',
     distID: Array<String>(),
   });
 
-  const [result, setResult] = useState<Array<any>>([])
+  const [distributorsFound, setDistributorsFound] = useState<Array<any>>([]);
+  const [accountObject, setAccount] = useState<Object>({});
   const [loading, setLoading] = useState(false);
   const [resultMessage, setResultMessage] = useState("");
   const [_error, setError] = useState(Error);
   const [currentStep, setStep] = useState(0);
 
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // handles client id changes
+  const handleCidChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setInputs(prevState => ({
       ...prevState,
@@ -29,11 +30,23 @@ export default function App() {
   };
 
 
+  // handles changes to the configuration fields
+  const handleConfigChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.name
+    setAccount(prevState => {
+      let copy = JSON.parse(JSON.stringify(prevState))
+      name.split('.')
+          .reduce((o, p, i) =>
+              o[p] = name.split('.').length === ++i ?
+                  (e.target.type == "checkbox" ? e.target.checked : e.target.value) : o[p] || {}, copy)
+      return copy;
+    });
+  };
+
+
   // handleDistributorChange and distributorButtons dynamically show what distributors 
   // the user has chosen
-  // TODO: integrate with functionality
-  const handleDistributorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setStep(2);
+  const handleSelectedAccountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const distID = e.target.name;
     inputs.sk = e.target.parentElement?.parentElement?.parentElement?.id || "UNDEFINED";
     const newSelected = new Set(inputs.distID);
@@ -44,8 +57,41 @@ export default function App() {
     }
     setInputs(prevState => ({
       ...prevState,
-      distID: Array.from(newSelected)
+      distID: Array.from(newSelected),
     }));
+    if (newSelected.size === 0) {
+      setStep(1);
+      return;
+    }
+    const url = new URL('https://yf6zmmg1j0.execute-api.us-west-1.amazonaws.com/Prod/retrieveAccount');
+    url.searchParams.set('dataAcctID', inputs.dataAcctID);
+    url.searchParams.set('sk', inputs.sk);
+    fetch(url, {
+      method: 'GET',
+    })
+        .then((response) => {
+          response.json().then((json) => {
+            if (!json?.error) {
+              setAccount(json.data);
+              setResultMessage("");
+              setStep(2);
+            }
+            else {
+              setResultMessage(json.message);
+              setError(json.error);
+            }
+            console.log(json.data);
+          })
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+          // Handle error and display user-friendly message
+          setError(error);
+          setResultMessage('An error occurred. Please try again later.');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
   };
 
 
@@ -56,6 +102,7 @@ export default function App() {
   ));
 
 
+  // TODO: cleanup
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true); // Start loading
@@ -71,7 +118,7 @@ export default function App() {
               if (!json?.error) {
                 setStep(1);
                 //console.log(json.data);
-                setResult(json.data);
+                setDistributorsFound(json.data);
                 setResultMessage("");
               }
               else {
@@ -89,21 +136,14 @@ export default function App() {
           .finally(() => {
             setLoading(false);
           });
-    } else if (currentStep == 1) { // step 1 is selecting the distributor ID(s) to update
-      // TODO: set the values from the selected checkboxes here
-
-      // handled with -handleDistributorChange-, TODO: integrate it with the step logic 
-      setStep(2);
-      setLoading(false);
-
     } else if (currentStep == 2) { // step 2 is getting the key/secret and submitting the update
-      console.log(JSON.stringify(inputs));
-      fetch('https://yf6zmmg1j0.execute-api.us-west-1.amazonaws.com/Prod/updateSecret', {
+      console.log(JSON.stringify(accountObject));
+      fetch('https://yf6zmmg1j0.execute-api.us-west-1.amazonaws.com/Prod/saveAccount', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(inputs),
+        body: JSON.stringify({accountData: accountObject}),
       })
           .then((response) => { // TODO: refactor this into a named function (it's mostly the same as step 0)
             response.json().then((json) => {
@@ -129,32 +169,7 @@ export default function App() {
     }
   };
 
-  /*
-
-  let distributorCheckboxes = result.map(function(item) {
-     return (
-        <div className='bg-emerald-900 mb-4'>
-          <input type="checkbox" id={item?.sk + item?.distID} name={item?.distID} data-sk={item?.sk} data-distID={item?.distID}/>
-          <label htmlFor={item?.sk + item?.distID}> {item?.distID}</label>
-        </div>
-      );
-  });
-  {currentStep == 1 ? distributorCheckboxes : null}
-            {currentStep == 2 ?
-              <div className='grid grid-cols-2 items-start my-4'>
-                <span className='bg-lightGray-300 mx-4 w-auto p-1 rounded font-bold'>Merchant ID: {inputs.merchantID}</span>
-                <span className='bg-lightGray-200 mx-4 w-auto p-1 rounded'>Distributors: {inputs.distIDs.toString()}</span>
-              </div> : null}
-          {currentStep == 2 ? Textbox({
-                name: "key",
-                id: "inline-key",
-                value: inputs.key, disabled: false, label: "Key", handleChange}) : null}
-          {currentStep == 2 ? Textbox({
-            name: "secret",
-            id: "inline-secret",
-            value: inputs.secret, disabled: false, label: "Secret", handleChange}) : null}
-        
-  */
+  // TODO: make entire client selectable
   const ClientComponent = (props: { accountId: string, sk: string, distributors: any}) => {
     return (
       <div className="p-4 rounded-sm flex flex-col">
@@ -173,7 +188,7 @@ export default function App() {
                           type="checkbox"
                           id={item?.sk + item?.distID}
                           name={item?.distID}
-                          onChange={handleDistributorChange}
+                          onChange={handleSelectedAccountChange}
                           checked={inputs.distID.includes(item?.distID)}
                       />
                       <div className='bg-lightGray-200 mb-4 rounded-lg w-2/4 font-semibold cursor-pointer'
@@ -189,6 +204,76 @@ export default function App() {
     );
   };
 
+  const paymentConfigFields = (account: Object, path = "") => {
+    return Array.from(Object.keys(account)).map(key => {
+      if (["dataAccountId", "sk", "lastUpdated"].includes(key)) return null;
+      const value = account[key as keyof typeof account];
+      const pathKey = (path === "") ? key : (path + "." + key);
+      // TODO: design
+      switch (typeof value) {
+        case "string":
+          return Textbox({
+            name: pathKey,
+            id:pathKey,
+            value: value, disabled: false, label: key,
+            handleChange: handleConfigChange
+          })
+        case "boolean":
+          return (
+              <div className="mb-4 ml-4 flex-grow mr-4">
+                <input
+                    type="checkbox"
+                    name={pathKey}
+                    id={pathKey}
+                    onChange={handleConfigChange}
+                    checked={value}
+                />
+                <label htmlFor={pathKey}>{key}</label>
+              </div>
+          )
+        case "object":
+          if (Array.isArray(value)) {
+            // TODO: array type handling
+            return null;
+          } else {
+            return (
+                <div>
+                  {Label({for: key, text: key + ":"})}
+                  {paymentConfigFields(value, pathKey).map(subcomp => subcomp)}
+                </div>
+            )
+          }
+        default:
+          return null;
+      }
+    })
+  };
+
+  const paymentConfigSection = () => {
+    return (
+        <form className="w-full" onSubmit={handleSubmit} id="submitKeys">
+          <div className='flex justify-center flex-grow bg-w'>
+            <div className="mb-4 mt-20">
+              <h1 className="text-xl font-semibold mb-3">Payment Key Validation</h1>
+              <div className="flex space-x-4 mb-6">
+                {distributorButtons.length > 0 ? distributorButtons : (
+                    <span></span>
+                )}
+              </div>
+              <div className="mb-4">
+                {paymentConfigFields(accountObject).map((comp) => (comp))}
+              </div>
+              <div className="flex items-center justify-between">
+                <button className="bg-red text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" disabled={loading}>
+                  {loading ? "Processing..." : "Validate"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+    )
+  }
+
   return (
       <div className=' bg-white grid grid-cols-7'>
         <Sidebar/>
@@ -202,7 +287,10 @@ export default function App() {
                 {Textbox({
                   name: "dataAcctID",
                   id: "inline-dataAcctID",
-                  value: inputs.dataAcctID, disabled: currentStep != 0, label: "Data Account ID", handleChange
+                  value: inputs.dataAcctID,
+                  disabled: currentStep != 0,
+                  label: "Data Account ID",
+                  handleChange: handleCidChange,
                 })}
                 <button
                     disabled={loading}
@@ -216,7 +304,7 @@ export default function App() {
 
           {/* show client component when input is filled */}
           {currentStep == 1 || currentStep == 2 ?
-              <ClientComponent accountId={inputs.dataAcctID} sk={inputs.sk} distributors={result}/> : null}
+              <ClientComponent accountId={inputs.dataAcctID} sk={inputs.sk} distributors={distributorsFound}/> : null}
 
           {/* Loading indicator / API message */}
           {loading ? <div className="border-gray-300 h-20 w-20 animate-spin rounded-full border-8 border-t-blue-600"/> :
@@ -226,38 +314,8 @@ export default function App() {
 
         {/*  right side, step 2 */}
         <div className="col-span-3">
-          {currentStep == 2 ?
-              <form className="w-full" onSubmit={handleSubmit} id="submitKeys">
-                <div className='flex justify-center flex-grow bg-w'>
-                  <div className="mb-4 mt-20">
-                    <h1 className="text-xl font-semibold mb-3">Payment Key Validation</h1>
-                    <div className="flex space-x-4 mb-6">
-                  {distributorButtons.length > 0 ? distributorButtons : (
-                    <span></span>
-                  )}
-                  </div>
-                  <div className="mb-4">
-                    {Textbox({
-                      name: "key",
-                      id: "inline-key",
-                      value: inputs.key, disabled: false, label: "Key ID", handleChange
-                    })}
-                  </div>
-                  <div className="mb-6">
-                    {Textbox({
-                      name: "secret",
-                      id: "inline-secret",
-                      value: inputs.secret, disabled: false, label: "Key Secret", handleChange
-                    })}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <button className="bg-red text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" disabled={loading}>
-                      {loading ? "Processing..." : "Validate"}
-                    </button>
-                  </div>
-                </div>
-                </div>
-              </form> : null}
+          {currentStep == 2 ? paymentConfigSection() : null}
+
         </div>
 
       </div>
